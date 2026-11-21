@@ -6,6 +6,18 @@
   <meta name="theme-color" content="#07080d" />
   <meta name="description" content="MANDO — Tu control, a tu manera. Usá tu celular como un mando universal que armás a tu gusto." />
   <title>MANDO · Tu control, a tu manera</title>
+  <script>
+    // Un solo link: en el celular abre el mando; en la compu del proyector, la pantalla de la tele.
+    // Con ?elegir se muestra esta portada para elegir a mano.
+    (function () {
+      var q = new URLSearchParams(location.search);
+      if (q.has("elegir")) return;
+      var celular = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+      var destino = celular ? "./celular" : "./proyector";
+      var resto = q.toString();
+      location.replace(destino + (resto ? "?" + resto : ""));
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
