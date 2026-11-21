@@ -43,19 +43,30 @@ function aplicar(datos) {
   avisar(datos.ultima);
 }
 
-// El código y la dirección solo los entrega el servidor a la propia notebook.
+function qrSrc(data) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=8&data=${encodeURIComponent(data)}`;
+}
+
+// El código, el QR y la dirección los entrega el servidor a la notebook.
 try {
   const res = await fetch("/api/info");
   if (res.ok) {
     const info = await res.json();
+    const joinUrl = info.urls?.[0];
     $("codigo").textContent = info.codigo;
-    $("url").textContent = info.urls[0]?.replace(/^http:\/\//, "") || "Sin red: conectá la notebook al wifi";
+    $("url").textContent = joinUrl?.replace(/^https?:\/\//, "") || "Sin red: conectá la notebook al wifi";
+    const qr = $("qr");
+    if (qr && joinUrl) {
+      qr.hidden = false;
+      qr.src = qrSrc(joinUrl);
+      qr.alt = `QR para abrir ${joinUrl}`;
+    }
     $("unirse").hidden = false;
     ultimaVista = info.ultima?.hora || 0;
     aplicar(info);
   }
 } catch {
-  $("aviso").textContent = "Abrí esta página desde el servidor: node server/server.mjs";
+  $("aviso").textContent = "Abrí esta página desde el servidor: npm run sala";
   $("aviso").classList.add("is-visible");
 }
 

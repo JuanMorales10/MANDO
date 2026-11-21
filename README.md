@@ -4,7 +4,14 @@
 
 **Demo:** https://mando-one.vercel.app · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
 
-Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo tiene que funcionar en una sola página y en una sola notebook, sin depender del celular, un QR ni la red entre máquinas.
+**Celular + QR (misma WiFi):**
+```sh
+npm run sala                 # TV + mando por QR
+npm run sala:puntero         # lo mismo + puntero del teléfono → cursor Mac
+```
+Proyector: `http://localhost:8080/proyector.html` · escaneá el QR con el celular.
+
+Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo de una sola página sigue en Vercel; el QR necesita la notebook en la misma red.
 
 ## Quién hace qué
 
