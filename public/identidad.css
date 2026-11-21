@@ -1,18 +1,51 @@
+/* Paleta «Moderno». Los --m-* se copian de tema.css (no @import) porque
+   puntero/server.mjs sirve identidad.css suelto en /mando/ sin tema.css. */
 :root {
-  --azul-noche: #101522;
-  --azul-profundo: #0a0e18;
-  --azul-panel: #161d2e;
-  --azul-celda: #1c2438;
-  --marfil: #f5f4ee;
-  --marfil-suave: #c8c6bc;
-  --lima: #c9f76a;
-  --lima-soft: #a8d94f;
-  --borde: #2c354c;
-  --peligro: #ff6b6b;
-  --ok: #c9f76a;
+  --m-fondo: #07080d;
+  --m-superficie: #12141c;
+  --m-elevado: #1b1e29;
+  --m-tecla: #232736;
+  --m-borde: #2a2e3d;
 
-  --font-display: "Syne", "Avenir Next", "Segoe UI", sans-serif;
-  --font-ui: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --m-primario: #6c5cff;
+  --m-primario-suave: #221e4a;
+  --m-cian: #22d3ee;
+  --m-degradado: linear-gradient(90deg, #7b5cff 0%, #22d3ee 100%);
+  --m-brillo: 0 10px 28px rgba(108, 92, 255, 0.45);
+
+  --m-encendido: #ff5a6e;
+  --m-ok: #34e0a1;
+  --m-aviso: #ffb547;
+
+  --m-texto: #f4f5fa;
+  --m-texto-2: #9097ad;
+  --m-texto-primario: #a99fff;
+  --m-sobre-color: #ffffff;
+
+  --m-radio-sm: 14px;
+  --m-radio: 22px;
+  --m-radio-lg: 28px;
+  --m-radio-xl: 36px;
+
+  --m-fuente: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --m-interior: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:root {
+  --azul-noche: #07080d;
+  --azul-profundo: #050609;
+  --azul-panel: #12141c;
+  --azul-celda: #1b1e29;
+  --marfil: #f4f5fa;
+  --marfil-suave: #9097ad;
+  --lima: #a99fff;
+  --lima-soft: #6c5cff;
+  --borde: #2a2e3d;
+  --peligro: #ff5a6e;
+  --ok: #34e0a1;
+
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-ui: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -21,14 +54,15 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
 
-  --radius-sm: 0.65rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.35rem;
+  --radius-sm: 0.875rem;
+  --radius-md: 1.375rem;
+  --radius-lg: 1.75rem;
   --radius-pill: 999px;
 
   --touch: 3rem;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+  --gradiente: var(--m-degradado);
 
   color-scheme: dark;
   background: var(--azul-noche);
@@ -55,7 +89,7 @@ body {
 body {
   min-height: 100dvh;
   background:
-    radial-gradient(120% 80% at 50% -10%, #1a2740 0%, transparent 55%),
+    radial-gradient(90% 55% at 50% -12%, rgba(108, 92, 255, 0.32) 0%, rgba(34, 211, 238, 0.06) 45%, transparent 70%),
     linear-gradient(180deg, var(--azul-noche) 0%, var(--azul-profundo) 100%);
   color: var(--marfil);
 }

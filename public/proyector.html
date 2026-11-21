@@ -4,7 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MANDO · Proyector</title>
-  <link rel="stylesheet" href="./identidad.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="./tema.css" />
   <link rel="stylesheet" href="./tv.css" />
   <link rel="stylesheet" href="./proyector.css" />
 </head>
@@ -12,9 +15,11 @@
   <main class="pro__escena">
     <div id="tv" class="pro__tv"></div>
     <aside class="pro__lado">
-      <p class="pro__marca">MANDO <span>Tu control, a tu manera</span></p>
+      <header class="pro__cabeza">
+        <p class="pro__marca">MANDO</p>
+        <h1 class="pro__titulo">Controlá esta TV con tu celular</h1>
+      </header>
       <section class="pro__unirse" id="unirse" hidden>
-        <h2>Agarrá el control</h2>
         <p class="pro__qr-hint">Escaneá con el celular</p>
         <img
           id="qr"
@@ -24,14 +29,15 @@
           height="240"
           hidden
         />
+        <p class="pro__etiqueta">Entrá desde el celular a</p>
         <p class="pro__url" id="url"></p>
-        <p class="pro__codigo-titulo">Código</p>
+        <p class="pro__etiqueta">y poné el código</p>
         <p class="pro__codigo" id="codigo"></p>
       </section>
-      <section aria-label="Aparatos conectados">
-        <h2>Conectado a</h2>
+      <section class="pro__conectados" aria-label="Aparatos conectados">
+        <h2 class="pro__seccion">Conectados</h2>
         <ul class="pro__conectores" id="conectores">
-          <li data-ok="true">TV simulada</li>
+          <li data-ok="true"><strong>TV simulada</strong></li>
         </ul>
       </section>
     </aside>

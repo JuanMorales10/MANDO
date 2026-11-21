@@ -19,7 +19,7 @@ function pintarConectores(conectores = []) {
     const li = document.createElement("li");
     li.dataset.ok = String(item.ok);
     const nombre = document.createElement("strong");
-    nombre.textContent = `${item.ok ? "✔" : "⚠"} ${item.nombre}`;
+    nombre.textContent = item.nombre;
     const detalle = document.createElement("span");
     detalle.textContent = item.detalle || "";
     li.append(nombre, detalle);
@@ -30,7 +30,7 @@ function pintarConectores(conectores = []) {
 function avisar(ultima) {
   if (!ultima || ultima.hora <= ultimaVista) return;
   ultimaVista = ultima.hora;
-  const quien = ultima.origen === "celular" ? "📱 Desde un celular" : "💻 Desde la notebook";
+  const quien = ultima.origen === "celular" ? "Desde un celular" : "Desde la notebook";
   $("aviso").textContent = `${quien}: ${nombreDe(ultima.accion)}`;
   $("aviso").classList.add("is-visible");
   clearTimeout(ocultarAviso);
@@ -53,7 +53,13 @@ try {
   if (res.ok) {
     const info = await res.json();
     const joinUrl = info.urls?.[0];
-    $("codigo").textContent = info.codigo;
+    $("codigo").replaceChildren(...String(info.codigo).split("").map((d) => {
+      const casilla = document.createElement("span");
+      casilla.className = "pro__digito";
+      casilla.textContent = d;
+      return casilla;
+    }));
+    $("codigo").setAttribute("aria-label", `Código ${info.codigo}`);
     $("url").textContent = joinUrl?.replace(/^https?:\/\//, "") || "Sin red: conectá la notebook al wifi";
     const qr = $("qr");
     if (qr && joinUrl) {

@@ -5,33 +5,33 @@ const ROWS = 4;
 const ACTIONS = {
   POWER: {
     id: "POWER",
-    label: "Power",
-    icon: "⏻",
+    label: "Encendido",
+    icon: '<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
   },
   MUTE: {
     id: "MUTE",
     label: "Silencio",
-    icon: "🔇",
+    icon: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="m17 9 4 6M21 9l-4 6"/>',
   },
   VOL_UP: {
     id: "VOL_UP",
     label: "Vol +",
-    icon: "🔊",
+    icon: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.5 5.5a9 9 0 0 1 0 13"/>',
   },
   VOL_DOWN: {
     id: "VOL_DOWN",
     label: "Vol −",
-    icon: "🔉",
+    icon: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>',
   },
   CH_UP: {
     id: "CH_UP",
     label: "Canal +",
-    icon: "▲",
+    icon: '<path d="m6 15 6-6 6 6"/>',
   },
   CH_DOWN: {
     id: "CH_DOWN",
     label: "Canal −",
-    icon: "▼",
+    icon: '<path d="m6 9 6 6 6-6"/>',
   },
 };
 
@@ -263,7 +263,10 @@ export function mountRemote(el, dispatch) {
     const icon = document.createElement("span");
     icon.className = "mando-remote__icon";
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = action.icon;
+    icon.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      action.icon +
+      "</svg>";
 
     const label = document.createElement("span");
     label.className = "mando-remote__label";

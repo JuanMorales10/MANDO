@@ -3,64 +3,104 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#0C0C10" />
+    <meta name="theme-color" content="#07080d" />
     <title>MANDO · Puntero</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
     <link rel="stylesheet" href="./puntero.css" />
   </head>
   <body>
     <main class="pt">
       <header class="pt__cabecera">
-        <div>
-          <p class="pt__marca">MANDO · Puntero</p>
+        <span class="pt__avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M2 20h20" /></svg>
+        </span>
+        <div class="pt__quien">
+          <p class="pt__marca">MANDO</p>
+          <p class="pt__nombre">Puntero</p>
           <p class="pt__volumen" id="volumen">Mové el teléfono, se mueve el cursor</p>
         </div>
         <span class="pt__estado" id="estado" data-estado="sin">Sin conexión</span>
       </header>
 
       <nav class="pt__vistas" aria-label="Qué querés controlar">
-        <button type="button" data-ir="puntero" aria-pressed="true">Puntero</button>
-        <button type="button" data-ir="presentacion" aria-pressed="false">Diapositivas</button>
-        <button type="button" id="ir-mando">← Mando</button>
+        <button type="button" data-ir="puntero" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 7-6 2-2 6z" /></svg>Puntero
+        </button>
+        <button type="button" data-ir="presentacion" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M12 16v4M8 20h8" /></svg>Diapositivas
+        </button>
+        <button type="button" id="ir-mando">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Mando
+        </button>
       </nav>
 
-
       <section class="pt__bloque" data-vista="puntero" aria-label="Puntero">
-        <h2 class="pt__titulo">Puntero</h2>
-
-        <button class="pt__activar" id="activar" type="button">Activar puntero</button>
+        <div class="pt__controles">
+          <button class="pt__activar" id="activar" type="button">Activar puntero</button>
+          <button class="pt__ajustes-boton" type="button" popovertarget="hoja-ajustes" aria-label="Ajustes del puntero">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg>
+          </button>
+        </div>
         <p class="pt__aviso" id="aviso" role="status"></p>
 
         <div class="pt__calibrar" id="calibrar-caja" role="status" hidden>
+          <span class="pt__calibrar-anillo" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>
+          </span>
           <p class="pt__calibrar-paso" id="calibrar-paso"></p>
           <p class="pt__calibrar-texto" id="calibrar-texto"></p>
+          <span class="pt__calibrar-barra" aria-hidden="true"></span>
         </div>
 
         <p class="pt__alerta" id="sin-clics" hidden>
-          El cursor se mueve, pero la Mac todavía no dio permiso para hacer clic
-          (Ajustes del Sistema → Privacidad y seguridad → Accesibilidad).
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg>
+          <span>
+            <b>El cursor se mueve, pero los clics están apagados</b>
+            <small>En la Mac: Ajustes del Sistema → Privacidad y seguridad → Accesibilidad.</small>
+          </span>
         </p>
 
         <div class="pt__pad" id="pad" aria-label="Zona táctil: tocá para hacer clic, arrastrá para mover, dos dedos para desplazar">
-          <span id="pad-texto">Tocá = clic · Arrastrá = mover<br /><small>Dos dedos: desplazar · Toque con dos dedos: clic derecho</small></span>
+          <span class="pt__pad-icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M10 13V4.5a1.5 1.5 0 0 1 3 0V12" /><path d="M13 11.5a1.5 1.5 0 0 1 3 0V13" /><path d="M16 12.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.6-2.2L4.4 16.4a1.5 1.5 0 0 1 2.3-1.9L10 17" /></svg>
+          </span>
+          <span class="pt__pad-texto" id="pad-texto">Tocá para hacer clic<small>Arrastrá para mover · Dos dedos: desplazar<br />Toque con dos dedos: clic derecho</small></span>
         </div>
 
-        <div class="pt__fila">
-          <button class="pt__boton" id="clic" type="button">Clic</button>
-          <button class="pt__boton" id="derecho" type="button">Clic derecho</button>
-          <button class="pt__boton" id="centrar" type="button">Centrar</button>
+        <div class="pt__fila pt__fila--clics">
+          <button class="pt__boton pt__boton--grande" id="derecho" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 3v8h6" /></svg>Clic derecho
+          </button>
+          <button class="pt__boton pt__boton--grande pt__boton--acento" id="clic" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6" /><path d="M12 7v4" /></svg>Clic
+          </button>
+          <button class="pt__boton pt__boton--grande" id="centrar" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /></svg>Centrar
+          </button>
         </div>
 
         <div class="pt__fila pt__fila--2">
-          <button class="pt__boton" data-rueda="120" type="button">▲ Subir</button>
-          <button class="pt__boton" data-rueda="-120" type="button">▼ Bajar</button>
+          <button class="pt__boton pt__boton--rueda" data-rueda="120" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>Subir
+          </button>
+          <button class="pt__boton pt__boton--rueda" data-rueda="-120" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7" /></svg>Bajar
+          </button>
         </div>
       </section>
 
       <section class="pt__bloque" data-vista="presentacion" aria-label="Presentación" hidden>
         <h2 class="pt__titulo">Presentación</h2>
+        <p class="pt__bajada">Las flechas pasan las diapositivas de la compu.</p>
         <div class="pt__fila pt__fila--2">
-          <button class="pt__boton pt__boton--alto" data-tecla="izq" type="button">◀ Anterior</button>
-          <button class="pt__boton pt__boton--alto pt__boton--acento" data-tecla="der" type="button">Siguiente ▶</button>
+          <button class="pt__boton pt__boton--alto" data-tecla="izq" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Anterior
+          </button>
+          <button class="pt__boton pt__boton--alto pt__boton--acento" data-tecla="der" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>Siguiente
+          </button>
         </div>
         <div class="pt__fila">
           <button class="pt__boton" data-tecla="espacio" type="button">Espacio</button>
@@ -69,19 +109,27 @@
         </div>
       </section>
 
-      <section class="pt__bloque" data-vista="puntero" aria-label="Ajustes">
-        <h2 class="pt__titulo">Ajustes</h2>
+      <section class="pt__bloque pt__hoja" id="hoja-ajustes" popover data-vista="puntero" aria-label="Ajustes">
+        <span class="pt__hoja-asa" aria-hidden="true"></span>
+        <div class="pt__hoja-cabeza">
+          <h2 class="pt__titulo">Ajustes del puntero</h2>
+          <button class="pt__hoja-cerrar" type="button" popovertarget="hoja-ajustes" popovertargetaction="hide" aria-label="Cerrar ajustes">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
         <div class="pt__ajustes">
           <label class="pt__ajuste">
-            <span>Velocidad <b id="velocidad-valor"></b></span>
+            <span>Velocidad del cursor <b id="velocidad-valor"></b></span>
             <input id="velocidad" type="range" min="6" max="60" step="1" />
           </label>
           <label class="pt__check"><input id="apretar" type="checkbox" /> Mover solo con el dedo apoyado</label>
           <label class="pt__check"><input id="inv-x" type="checkbox" /> Invertir izquierda/derecha</label>
           <label class="pt__check"><input id="inv-y" type="checkbox" /> Invertir arriba/abajo</label>
         </div>
-        <button class="pt__boton" id="calibrar" type="button">Calibrar de nuevo</button>
-        <button class="pt__boton pt__boton--cortar" id="cortar" type="button">Desconectar</button>
+        <button class="pt__boton" id="calibrar" type="button" popovertarget="hoja-ajustes" popovertargetaction="hide">Calibrar de nuevo</button>
+        <button class="pt__boton pt__boton--cortar" id="cortar" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9" /><path d="M6.3 7a8 8 0 1 0 11.4 0" /></svg>Desconectar
+        </button>
       </section>
     </main>
     <script type="module" src="./puntero.js"></script>

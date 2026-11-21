@@ -4,28 +4,45 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MANDO · Escaneá para controlar esta compu</title>
+    <meta name="theme-color" content="#07080d" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
     <style>
+      :root {
+        --m-fondo: #07080d; --m-superficie: #12141c; --m-elevado: #1b1e29; --m-borde: #2a2e3d;
+        --m-primario: #6c5cff; --m-primario-suave: #221e4a;
+        --m-degradado: linear-gradient(90deg, #7b5cff 0%, #22d3ee 100%);
+        --m-brillo: 0 10px 28px rgba(108, 92, 255, 0.45);
+        --m-encendido: #ff5a6e; --m-ok: #34e0a1; --m-aviso: #ffb547;
+        --m-texto: #f4f5fa; --m-texto-2: #9097ad; --m-texto-primario: #a99fff;
+        --m-fuente: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color-scheme: dark;
+      }
       * { box-sizing: border-box; }
       html, body { height: 100%; margin: 0; }
       body {
-        background: #101522; color: #f5f4ee;
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: radial-gradient(90% 60% at 50% -10%, rgba(108, 92, 255, 0.3), transparent 60%) no-repeat, var(--m-fondo);
+        color: var(--m-texto);
+        font-family: var(--m-fuente);
         display: grid; place-items: center; padding: 4vh 5vw;
       }
       main { display: grid; grid-template-columns: minmax(260px, 62vh) minmax(280px, 1fr); gap: 6vw; align-items: center; max-width: 1300px; width: 100%; }
       @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
-      #qr { background: #f5f4ee; border-radius: 28px; padding: 14px; aspect-ratio: 1; display: grid; place-items: center; color: #101522; font-weight: 800; text-align: center; }
+      #qr { background: #fff; border-radius: 36px; padding: 18px; aspect-ratio: 1; display: grid; place-items: center; color: var(--m-fondo); font-weight: 800; text-align: center; box-shadow: 0 0 0 1px var(--m-borde), 0 30px 80px rgba(108, 92, 255, 0.35); }
       #qr svg { width: 100%; height: 100%; display: block; }
-      .marca { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.14em; color: #c9f76a; }
-      h1 { margin: 10px 0 22px; font-size: clamp(34px, 4.6vw, 64px); line-height: 1.04; font-weight: 900; text-wrap: balance; }
-      ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; font-size: clamp(18px, 1.7vw, 24px); counter-reset: paso; }
-      li { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; counter-increment: paso; }
-      li::before { content: counter(paso); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #c9f76a; color: #c9f76a; font-weight: 900; }
-      .estados { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
-      .estado { padding: 12px 20px; border-radius: 999px; border: 2px dashed #f5f4ee; font-size: 20px; font-weight: 800; }
-      .estado[data-ok="si"] { background: #c9f76a; border: 2px solid #c9f76a; color: #101522; }
-      #enlace { margin-top: 22px; font: 15px ui-monospace, Menlo, monospace; color: #9aa3b8; word-break: break-all; }
-      #ayuda { margin-top: 12px; font-size: 16px; color: #9aa3b8; line-height: 1.4; max-width: 46ch; }
+      .marca { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.16em; color: var(--m-texto-primario); }
+      h1 { margin: 10px 0 26px; font-size: clamp(34px, 4.6vw, 64px); line-height: 1.05; font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+      ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; font-size: clamp(18px, 1.7vw, 24px); font-weight: 600; counter-reset: paso; }
+      li { display: grid; grid-template-columns: 48px 1fr; gap: 16px; align-items: center; counter-increment: paso; padding: 12px 18px 12px 12px; background: var(--m-superficie); border: 1px solid var(--m-borde); border-radius: 22px; }
+      li::before { content: counter(paso); display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--m-primario-suave); border: 1.5px solid var(--m-primario); color: var(--m-texto-primario); font-weight: 800; }
+      .estados { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+      .estado { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--m-encendido); font-size: 19px; font-weight: 700; }
+      .estado::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; box-shadow: 0 0 12px currentColor; }
+      .estado[data-ok="si"] { color: var(--m-ok); }
+      #clics[data-ok="no"] { color: var(--m-aviso); }
+      #enlace { margin-top: 22px; font: 15px ui-monospace, Menlo, monospace; color: var(--m-texto-2); word-break: break-all; }
+      #ayuda { margin-top: 12px; font-size: 16px; color: var(--m-texto-2); line-height: 1.5; max-width: 46ch; }
     </style>
   </head>
   <body>

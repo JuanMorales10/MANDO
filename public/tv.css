@@ -1,4 +1,6 @@
-/* TV simulada de MANDO + canales de video. Prefijo .mando-tv */
+/* TV simulada de MANDO + canales de video. Prefijo .mando-tv
+   Rediseño «Moderno»: usa los tokens --m-* de tema.css con fallback hex,
+   así también funciona en la demo (index.html), que no carga tema.css. */
 
 .mando-tv-anfitrion {
   box-sizing: border-box;
@@ -8,20 +10,23 @@
 }
 
 .mando-tv {
-  --tv-fondo: var(--azul-noche, #101522);
-  --tv-texto: var(--marfil, #f5f4ee);
-  --tv-acento: var(--lima, #c9f76a);
-  --tv-marco: #05070d;
-  --tv-suave: rgba(245, 244, 238, 0.78);
-  --tv-piso: 18px;
+  --tv-fondo: var(--m-fondo, #07080d);
+  --tv-texto: var(--m-texto, #f4f5fa);
+  --tv-texto-2: var(--m-texto-2, #9097ad);
+  --tv-degradado: var(--m-degradado, linear-gradient(90deg, #7b5cff 0%, #22d3ee 100%));
+  --tv-coral: var(--m-encendido, #ff5a6e);
+  --tv-borde: var(--m-borde, #2a2e3d);
+  --tv-radio: var(--m-radio-lg, 28px);
+  --tv-vidrio: rgba(0, 0, 0, 0.45);
+  --tv-piso: 14px;
 
   container-type: inline-size;
   box-sizing: border-box;
   width: min(100%, 150vh);
   margin-inline: auto;
   color: var(--tv-texto);
-  font-family: var(--font-ui, system-ui, sans-serif);
-  line-height: 1;
+  font-family: var(--m-fuente, var(--font-ui, system-ui, sans-serif));
+  line-height: 1.1;
   position: relative;
 }
 
@@ -36,15 +41,13 @@
   aspect-ratio: 16 / 9;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 2cqi;
-  padding: 3cqi 3.5cqi;
-  background: var(--tv-fondo);
-  border: 1.2cqi solid var(--tv-marco);
-  border-radius: 2.2cqi;
-  box-shadow:
-    0 0 0 0.25cqi rgba(245, 244, 238, 0.18),
-    0 2cqi 5cqi rgba(0, 0, 0, 0.45);
+  padding: 2.4cqi;
+  background: #000;
+  border: 1px solid var(--tv-borde);
+  border-radius: var(--tv-radio);
+  box-shadow: 0 2.5cqi 6cqi rgba(0, 0, 0, 0.55);
   overflow: hidden;
+  isolation: isolate;
 }
 
 .mando-tv__video {
@@ -65,10 +68,10 @@
   place-content: center;
   margin: 0;
   padding: 2cqi;
-  background: rgba(5, 7, 13, 0.82);
-  color: var(--tv-acento);
-  font-size: max(var(--tv-piso), 3cqi);
-  font-weight: 800;
+  background: rgba(7, 8, 13, 0.85);
+  color: var(--tv-texto);
+  font-size: max(var(--tv-piso), 2.6cqi);
+  font-weight: 700;
   text-align: center;
 }
 
@@ -82,84 +85,133 @@
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(5, 7, 13, 0.55) 0%, transparent 28%),
-    linear-gradient(0deg, rgba(5, 7, 13, 0.5) 0%, transparent 30%);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, transparent 25%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0%, transparent 28%);
 }
 
 .mando-tv__barra,
-.mando-tv__hud,
-.mando-tv__centro,
-.mando-tv__medidor {
+.mando-tv__hud {
   position: relative;
   z-index: 2;
 }
 
-.mando-tv__pie {
-  width: 26%;
-  height: 1.4cqi;
-  margin: 0 auto;
-  background: var(--tv-marco);
-  border-radius: 0 0 1.2cqi 1.2cqi;
-  box-shadow: 0 0 0 0.25cqi rgba(245, 244, 238, 0.18);
+/* Pastilla vidrio */
+.mando-tv__vidrio {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2cqi;
+  padding: 0.9cqi 1.8cqi 0.9cqi 0.9cqi;
+  border-radius: 999px;
+  background: var(--tv-vidrio);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  min-width: 0;
 }
 
 .mando-tv__barra {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 2cqi;
-  font-size: max(var(--tv-piso), 2.4cqi);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
-}
-
-.mando-tv__titulo {
-  color: var(--tv-acento);
 }
 
 .mando-tv__canal {
-  padding: 0.4cqi 1.2cqi;
-  border: 0.2cqi solid var(--tv-acento);
+  flex: none;
+  padding: 0.5cqi 1.1cqi;
+  border-radius: 0.9cqi;
+  background: var(--tv-degradado);
+  color: #fff;
+  font-size: max(12px, 1.9cqi);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.mando-tv__nombre {
+  font-size: max(var(--tv-piso), 2.4cqi);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.mando-tv__canal-pill {
+  max-width: 72%;
+}
+
+.mando-tv__vivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8cqi;
+  flex: none;
+  padding: 0.7cqi 1.4cqi;
   border-radius: 999px;
-  background: rgba(16, 21, 34, 0.72);
-  color: var(--tv-texto);
-  letter-spacing: 0.08em;
+  background: var(--tv-vidrio);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  font-size: max(11px, 1.4cqi);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.mando-tv__vivo::before {
+  content: "";
+  width: 0.9cqi;
+  height: 0.9cqi;
+  min-width: 7px;
+  min-height: 7px;
+  border-radius: 50%;
+  background: var(--tv-coral);
+  box-shadow: 0 0 0.8cqi var(--tv-coral);
 }
 
 .mando-tv__hud {
   display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.5cqi;
   align-self: end;
 }
 
-.mando-tv__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8cqi;
-  max-width: 70%;
-  padding: 0.8cqi 1.4cqi;
-  border-radius: 999px;
-  background: rgba(16, 21, 34, 0.78);
-  border: 0.15cqi solid rgba(245, 244, 238, 0.2);
-  font-size: max(var(--tv-piso), 2.2cqi);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
-}
-
 .mando-tv__chip--vol {
-  color: var(--tv-acento);
+  padding: 1cqi 2cqi;
+  gap: 1.4cqi;
+  min-width: 34%;
 }
 
 .mando-tv__chip .mando-tv__icono {
-  width: 1.15em;
-  height: 1.15em;
+  flex: none;
+  width: max(16px, 2.6cqi);
+  height: max(16px, 2.6cqi);
 }
 
+.mando-tv__medidor {
+  flex: 1;
+  min-width: 8cqi;
+  height: max(5px, 0.8cqi);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.mando-tv__medidor-nivel {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--tv-degradado);
+  transition: width 120ms ease;
+}
+
+.mando-tv__vol-num {
+  min-width: 2ch;
+  text-align: right;
+  font-size: max(var(--tv-piso), 2.6cqi);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Centros: silencio y apagada */
 .mando-tv__centro {
   position: absolute;
   inset: 0;
@@ -167,63 +219,63 @@
   display: none;
   place-content: center;
   place-items: center;
-  gap: 2cqi;
   padding: 4cqi;
   text-align: center;
 }
 
 .mando-tv__centro--silencio {
-  background: rgba(8, 10, 16, 0.55);
+  background: rgba(7, 8, 13, 0.35);
 }
 
 .mando-tv__aviso {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5cqi;
-  color: var(--tv-acento);
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-size: max(28px, 9cqi);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 1.5cqi rgba(0, 0, 0, 0.85);
+  gap: 0.8cqi;
+  padding: 3cqi 6cqi 3.2cqi;
+  border-radius: var(--tv-radio);
+  background: var(--tv-coral);
+  color: #fff;
+  box-shadow:
+    0 0 0 0.4cqi rgba(255, 90, 110, 0.25),
+    0 1.5cqi 7cqi rgba(255, 90, 110, 0.6);
 }
 
 .mando-tv__aviso .mando-tv__icono {
-  width: max(48px, 12cqi);
-  height: max(48px, 12cqi);
+  width: max(32px, 6.5cqi);
+  height: max(32px, 6.5cqi);
+}
+
+.mando-tv__aviso-texto {
+  font-size: max(30px, 9.5cqi);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.01em;
 }
 
 .mando-tv__guardado {
-  color: var(--tv-texto);
   font-size: max(var(--tv-piso), 2.6cqi);
   font-weight: 700;
-}
-
-.mando-tv__apagada {
-  color: var(--tv-texto);
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-size: max(24px, 7cqi);
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  opacity: 0.95;
 }
 
 .mando-tv__centro--apagada {
-  background: #05070d;
+  background: #000;
 }
 
-.mando-tv__medidor {
-  height: 1.1cqi;
-  border-radius: 999px;
-  background: rgba(245, 244, 238, 0.18);
-  overflow: hidden;
+.mando-tv__apagada {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6cqi;
+  color: var(--tv-texto-2);
+  font-size: max(20px, 4.4cqi);
+  font-weight: 700;
 }
 
-.mando-tv__medidor-nivel {
-  height: 100%;
-  width: 0;
-  background: var(--tv-acento);
-  transition: width 120ms ease;
+.mando-tv__apagada .mando-tv__icono {
+  width: max(36px, 7cqi);
+  height: max(36px, 7cqi);
 }
 
 .mando-tv__lector {
@@ -239,7 +291,6 @@
 .mando-tv[data-encendida="no"] .mando-tv__scrim,
 .mando-tv[data-encendida="no"] .mando-tv__barra,
 .mando-tv[data-encendida="no"] .mando-tv__hud,
-.mando-tv[data-encendida="no"] .mando-tv__medidor,
 .mando-tv[data-encendida="no"] .mando-tv__centro--silencio {
   display: none;
 }
@@ -252,12 +303,22 @@
   display: grid;
 }
 
-.mando-tv[data-encendida="si"][data-silencio="si"] .mando-tv__chip--vol {
-  opacity: 0.45;
+.mando-tv[data-encendida="si"][data-silencio="si"] .mando-tv__medidor-nivel {
+  background: rgba(255, 255, 255, 0.35);
 }
 
-@container (max-width: 320px) {
+.mando-tv[data-encendida="si"][data-silencio="si"] .mando-tv__chip--vol {
+  opacity: 0.6;
+}
+
+@container (max-width: 420px) {
   .mando-tv__pantalla {
-    --tv-piso: 14px;
+    --tv-piso: 12px;
+    padding: 3cqi;
   }
+  .mando-tv__vivo { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mando-tv__medidor-nivel { transition: none; }
 }

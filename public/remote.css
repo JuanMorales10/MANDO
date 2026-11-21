@@ -1,21 +1,27 @@
+/* Mando base · rediseño «Moderno». Mismas clases .mando-remote__*; solo cambia la piel. */
 .mando-remote {
   --mando-bg: transparent;
-  --mando-fg: var(--marfil, #f5f4ee);
-  --mando-accent: var(--lima, #c9f76a);
-  --mando-muted: var(--marfil-suave, #c8c6bc);
-  --mando-cell: var(--azul-celda, #1c2438);
-  --mando-border: var(--borde, #2c354c);
-  --mando-panel: var(--azul-panel, #161d2e);
+  --mando-fg: var(--m-texto, #f4f5fa);
+  --mando-accent: var(--m-primario, #6c5cff);
+  --mando-accent-text: var(--m-texto-primario, #a99fff);
+  --mando-accent-soft: var(--m-primario-suave, #221e4a);
+  --mando-gradient: var(--m-degradado, linear-gradient(90deg, #7b5cff 0%, #22d3ee 100%));
+  --mando-danger: var(--m-encendido, #ff5a6e);
+  --mando-muted: var(--m-texto-2, #9097ad);
+  --mando-cell: var(--m-elevado, #1b1e29);
+  --mando-border: var(--m-borde, #2a2e3d);
+  --mando-panel: var(--m-superficie, #12141c);
+  --mando-radius: 24px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3, 0.75rem);
+  gap: 0.875rem;
   width: 100%;
   margin: 0 auto;
   padding: 0;
   color: var(--mando-fg);
   background: var(--mando-bg);
-  font-family: var(--font-ui, "Manrope", sans-serif);
+  font-family: var(--m-fuente, "Plus Jakarta Sans", system-ui, sans-serif);
 }
 
 .mando-remote *,
@@ -26,43 +32,55 @@
 
 .mando-remote__header {
   display: grid;
-  gap: var(--space-3, 0.75rem);
+  gap: 0.75rem;
 }
 
 .mando-remote__title {
   display: none;
 }
 
+/* Selector Usar / Editar: pastilla segmentada */
 .mando-remote__modes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.35rem;
-  padding: 0.35rem;
+  gap: 0.25rem;
+  padding: 0.3rem;
   border: 1px solid var(--mando-border);
-  border-radius: var(--radius-pill, 999px);
+  border-radius: 999px;
   background: var(--mando-panel);
+  box-shadow: var(--m-interior, inset 0 1px 0 rgba(255, 255, 255, 0.06));
 }
 
 .mando-remote__mode {
   appearance: none;
-  min-height: var(--touch, 3rem);
+  min-height: 3rem;
   border: 0;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: 999px;
   margin: 0;
-  padding: 0.65rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   background: transparent;
   color: var(--mando-muted);
   font: inherit;
   font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease, transform 120ms ease;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+
+.mando-remote__mode:hover {
+  color: var(--mando-fg);
 }
 
 .mando-remote__mode.is-active {
-  background: var(--mando-accent);
-  color: var(--azul-noche, #101522);
+  background: var(--mando-gradient);
+  color: #fff;
+  box-shadow: var(--m-brillo, 0 10px 28px rgba(108, 92, 255, 0.45));
+}
+
+.mando-remote.is-edit .mando-remote__mode.is-active {
+  background: var(--mando-danger);
+  box-shadow: 0 10px 28px rgba(255, 90, 110, 0.35);
 }
 
 .mando-remote__mode:active {
@@ -72,22 +90,28 @@
 .mando-remote__hint {
   margin: 0;
   min-height: 1.35em;
-  padding: 0 var(--space-1, 0.25rem);
+  padding: 0 0.25rem;
   color: var(--mando-muted);
   font-size: 0.95rem;
-  font-weight: 700;
-  line-height: 1.35;
+  font-weight: 600;
+  line-height: 1.4;
   text-align: center;
 }
 
+/* En Editar, el aviso es una franja coral clara */
 .mando-remote__hint.is-edit {
-  color: var(--mando-accent);
+  padding: 0.65rem 0.9rem;
+  border: 1px solid rgba(255, 90, 110, 0.45);
+  border-radius: 14px;
+  background: rgba(255, 90, 110, 0.12);
+  color: #ffc4cc;
+  font-weight: 700;
 }
 
 .mando-remote__toolbar {
   display: none;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-2, 0.5rem);
+  gap: 0.5rem;
 }
 
 .mando-remote.is-edit .mando-remote__toolbar {
@@ -96,15 +120,15 @@
 
 .mando-remote__tool {
   appearance: none;
-  min-height: var(--touch, 3rem);
+  min-height: 3rem;
   border: 1px solid var(--mando-border);
-  border-radius: var(--radius-md, 1rem);
-  padding: 0.65rem 0.75rem;
+  border-radius: 999px;
+  padding: 0.6rem 0.75rem;
   background: var(--mando-cell);
   color: var(--mando-fg);
   font: inherit;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
@@ -116,65 +140,71 @@
 
 .mando-remote__tool.is-active {
   border-color: var(--mando-accent);
-  background: var(--mando-accent);
-  color: var(--azul-noche, #101522);
+  background: var(--mando-accent-soft);
+  color: #fff;
 }
 
+/* Grilla de teclas */
 .mando-remote__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(var(--touch, 3rem), 1fr));
-  gap: 0.7rem;
-  min-height: 18rem;
+  grid-template-rows: repeat(4, minmax(4.25rem, 1fr));
+  gap: 0.625rem;
+  min-height: 20rem;
   padding: 0.75rem;
   border: 1px solid var(--mando-border);
-  border-radius: var(--radius-lg, 1.35rem);
+  border-radius: 32px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
-    var(--azul-profundo, #0a0e18);
+    radial-gradient(120% 60% at 50% 0%, rgba(108, 92, 255, 0.1), transparent 60%),
+    var(--mando-panel);
+  box-shadow:
+    var(--m-interior, inset 0 1px 0 rgba(255, 255, 255, 0.06)),
+    0 24px 60px rgba(0, 0, 0, 0.45);
   touch-action: none;
   user-select: none;
 }
 
 .mando-remote__cell {
-  min-height: var(--touch, 3rem);
+  min-height: 3rem;
   border: 1px dashed transparent;
-  border-radius: var(--radius-md, 1rem);
-  background: rgba(28, 36, 56, 0.55);
+  border-radius: var(--mando-radius);
+  background: rgba(27, 30, 41, 0.35);
   pointer-events: none;
 }
 
 .mando-remote.is-edit .mando-remote__cell {
-  border-color: rgba(44, 53, 76, 0.95);
+  border-color: rgba(144, 151, 173, 0.28);
   pointer-events: auto;
 }
 
 .mando-remote__cell.is-drop-target {
   border-style: solid;
   border-color: var(--mando-accent);
-  background: rgba(201, 247, 106, 0.16);
+  background: rgba(108, 92, 255, 0.18);
   box-shadow: inset 0 0 0 1px var(--mando-accent);
 }
 
 .mando-remote__btn {
+  position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.35rem;
   width: 100%;
   height: 100%;
-  min-height: var(--touch, 3rem);
+  min-height: 3rem;
   margin: 0;
-  padding: 0.45rem;
-  border: 2px solid rgba(201, 247, 106, 0.55);
-  border-radius: var(--radius-md, 1rem);
-  background: linear-gradient(180deg, #1f2940 0%, #151c2d 100%);
-  color: var(--mando-fg);
+  padding: 0.5rem 0.35rem;
+  border: 1px solid var(--mando-border);
+  border-radius: var(--mando-radius);
+  background: var(--mando-cell);
+  box-shadow: var(--m-interior, inset 0 1px 0 rgba(255, 255, 255, 0.06));
+  color: #d5d8e4;
   font: inherit;
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.875rem;
+  font-weight: 700;
   line-height: 1.1;
   cursor: pointer;
   touch-action: none;
@@ -182,39 +212,63 @@
     transform 120ms ease,
     background 120ms ease,
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    color 120ms ease;
+}
+
+.mando-remote__btn:hover {
+  border-color: #3a3f55;
+  color: var(--mando-fg);
 }
 
 .mando-remote__btn:focus-visible {
-  outline: 3px solid var(--mando-fg);
+  outline: 3px solid var(--mando-accent-text);
   outline-offset: 2px;
 }
 
 .mando-remote__btn.is-selected {
   border-color: var(--mando-accent);
-  box-shadow: 0 0 0 3px rgba(201, 247, 106, 0.35);
+  background: var(--mando-accent-soft);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(108, 92, 255, 0.3);
 }
 
 .mando-remote__btn.is-dragging {
-  opacity: 0.55;
+  opacity: 0.6;
   z-index: 2;
 }
 
+/* Tecla grande = tecla destacada */
 .mando-remote__btn--large {
-  font-size: 1.15rem;
-  border-width: 3px;
+  font-size: 1.05rem;
   border-color: var(--mando-accent);
-  background: linear-gradient(180deg, #2a3820 0%, #1a2418 100%);
+  background: var(--mando-accent-soft);
+  color: #fff;
 }
 
 .mando-remote__icon {
-  display: block;
-  font-size: 1.55rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.4rem;
   line-height: 1;
 }
 
+.mando-remote__icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .mando-remote__btn--large .mando-remote__icon {
-  font-size: 2.1rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 2rem;
+}
+
+.mando-remote__btn[data-action="POWER"] .mando-remote__icon {
+  color: var(--mando-danger);
 }
 
 .mando-remote__label {
@@ -225,8 +279,15 @@
   white-space: nowrap;
 }
 
+/* Editar: teclas con borde punteado y asa */
 .mando-remote.is-edit .mando-remote__btn {
+  border-style: dashed;
+  border-color: rgba(255, 90, 110, 0.6);
   cursor: grab;
+}
+
+.mando-remote.is-edit .mando-remote__btn.is-selected {
+  border-color: var(--mando-accent);
 }
 
 .mando-remote.is-edit .mando-remote__btn.is-dragging {
@@ -236,22 +297,21 @@
 .mando-remote.is-edit .mando-remote__btn::after {
   content: "⋮⋮";
   position: absolute;
-  top: 0.35rem;
-  right: 0.45rem;
-  color: rgba(245, 244, 238, 0.45);
+  top: 0.4rem;
+  right: 0.6rem;
+  color: rgba(244, 245, 250, 0.45);
   font-size: 0.7rem;
   letter-spacing: -0.08em;
   line-height: 1;
 }
 
-.mando-remote__btn {
-  position: relative;
-}
-
+/* Usar: presionada levemente hundida y activa en violeta */
 .mando-remote.is-use .mando-remote__btn:active {
-  transform: scale(0.96);
+  transform: translateY(1px) scale(0.97);
   border-color: var(--mando-accent);
-  background: #243018;
+  background: var(--mando-accent-soft);
+  color: #fff;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.45);
 }
 
 @media (min-width: 900px) {
@@ -260,7 +320,7 @@
   }
 
   .mando-remote__btn {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
 
   .mando-remote__hint {
