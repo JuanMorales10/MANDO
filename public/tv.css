@@ -1,0 +1,224 @@
+/* TV simulada de MANDO. Todo con prefijo .mando-tv.
+   Los tamaños usan cqi (ancho del contenedor) para que la pantalla
+   se lea igual en media página que en pantalla completa. */
+
+/* Elemento donde se monta la TV: renderTV le pone esta clase. */
+.mando-tv-anfitrion {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  align-self: stretch;
+}
+
+.mando-tv {
+  --tv-fondo: var(--azul-noche, #101522);
+  --tv-texto: var(--marfil, #F5F4EE);
+  --tv-acento: var(--lima, #C9F76A);
+  --tv-marco: #05070d;
+  --tv-suave: rgba(245, 244, 238, 0.78);
+  /* Piso de 20 px para todo texto; solo se suelta en pantallas diminutas (< 320 px). */
+  --tv-piso: 20px;
+
+  container-type: inline-size;
+  box-sizing: border-box;
+  /* Nunca más alta que la ventana: el ancho se limita por el alto disponible. */
+  width: min(100%, 150vh);
+  margin-inline: auto;
+  color: var(--tv-texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1;
+  position: relative;
+}
+
+.mando-tv *,
+.mando-tv *::before,
+.mando-tv *::after {
+  box-sizing: border-box;
+}
+
+.mando-tv__pantalla {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 2cqi;
+  padding: 3.500cqi 4cqi;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(201, 247, 106, 0.08), transparent 60%),
+    var(--tv-fondo);
+  border: 1.400cqi solid var(--tv-marco);
+  border-radius: 2.400cqi;
+  box-shadow: 0 0 0 0.250cqi rgba(245, 244, 238, 0.18), 0 2cqi 5cqi rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.mando-tv__pie {
+  width: 26%;
+  height: 1.600cqi;
+  margin: 0 auto;
+  background: var(--tv-marco);
+  border-radius: 0 0 1.200cqi 1.200cqi;
+  box-shadow: 0 0 0 0.250cqi rgba(245, 244, 238, 0.18);
+}
+
+@container (max-width: 320px) {
+  .mando-tv__pantalla {
+    --tv-piso: 0px;
+  }
+}
+
+/* Barra superior */
+
+.mando-tv__barra {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2cqi;
+  font-size: max(var(--tv-piso), 2.600cqi);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.mando-tv__titulo {
+  padding: 0.900cqi 1.600cqi;
+  border: 0.300cqi solid var(--tv-acento);
+  border-radius: 1cqi;
+  color: var(--tv-acento);
+}
+
+/* Zona central: se muestra una sola de las tres vistas */
+
+.mando-tv__centro {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2cqi;
+  min-height: 0;
+  text-align: center;
+}
+
+.mando-tv[data-encendida="si"][data-silencio="no"] .mando-tv__centro--volumen,
+.mando-tv[data-encendida="si"][data-silencio="si"] .mando-tv__centro--silencio,
+.mando-tv[data-encendida="no"] .mando-tv__centro--apagada {
+  display: flex;
+}
+
+.mando-tv__icono {
+  width: 1.150em;
+  height: 1.150em;
+  flex: none;
+}
+
+/* Vista normal: volumen grande */
+
+.mando-tv__etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 0.500em;
+  font-size: max(var(--tv-piso), 4cqi);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--tv-acento);
+}
+
+.mando-tv__numero {
+  font-size: 28cqi;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 0.850;
+}
+
+/* Vista silenciada: aviso que se lee desde el fondo */
+
+.mando-tv__aviso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.300em;
+  width: 100%;
+  padding: 3cqi 2cqi;
+  font-size: 13cqi;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--tv-fondo);
+  background: var(--tv-acento);
+  border-radius: 2cqi;
+}
+
+.mando-tv__guardado {
+  font-size: max(var(--tv-piso), 4.400cqi);
+  font-weight: 700;
+  color: var(--tv-suave);
+}
+
+.mando-tv__guardado b {
+  color: var(--tv-texto);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Vista apagada */
+
+.mando-tv__apagada {
+  font-size: 6cqi;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--tv-suave);
+}
+
+.mando-tv[data-encendida="no"] .mando-tv__pantalla {
+  background: var(--tv-marco);
+}
+
+.mando-tv[data-encendida="no"] .mando-tv__medidor {
+  visibility: hidden;
+}
+
+/* Medidor de volumen */
+
+.mando-tv__medidor {
+  height: 2.200cqi;
+  border: 0.300cqi solid var(--tv-texto);
+  border-radius: 99cqi;
+  overflow: hidden;
+}
+
+.mando-tv__medidor-nivel {
+  height: 100%;
+  background: var(--tv-acento);
+  transition: width 120ms ease-out;
+}
+
+/* En silencio el medidor conserva el nivel guardado, rayado y sin relleno pleno */
+.mando-tv[data-silencio="si"] .mando-tv__medidor {
+  border-style: dashed;
+  border-color: var(--tv-suave);
+}
+
+.mando-tv[data-silencio="si"] .mando-tv__medidor-nivel {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--tv-suave) 0 0.800cqi,
+    transparent 0.800cqi 1.600cqi
+  );
+}
+
+/* Texto solo para lectores de pantalla */
+
+.mando-tv__lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mando-tv__medidor-nivel {
+    transition: none;
+  }
+}
