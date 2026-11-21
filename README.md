@@ -2,14 +2,17 @@
 
 **Tu control, a tu manera.**
 
-**Demo:** https://mando-one.vercel.app · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
+**Demo:** https://mando-psi.vercel.app (se publica sola con cada cambio en `main`) · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
 
-**Celular + QR (misma WiFi):**
+**Celular + QR (misma WiFi), en la notebook del proyector:**
+
+- **Doble clic en `MANDO.command`** — arranca todo (mando, TV, puntero) y abre el proyector con el QR. No hace falta tener Node: usa el de Cursor o VS Code.
+- O por terminal:
 ```sh
-npm run sala                 # TV + mando por QR
-npm run sala:puntero         # lo mismo + puntero del teléfono → cursor Mac
+npm run sala                 # TV + mando por QR · proyector en http://localhost:8080/proyector.html
+npm run sala:puntero         # lo mismo + puntero del teléfono · proyector en http://localhost:8090/proyector.html
 ```
-Proyector: `http://localhost:8080/proyector.html` · escaneá el QR con el celular.
+Escaneá el QR con la cámara del celular: entra directo al mando, sin escribir nada. Antes de presentar, dale permiso de **Accesibilidad** a la app que abre MANDO (Ajustes → Privacidad y seguridad → Accesibilidad) para que funcionen el puntero y las teclas.
 
 Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo de una sola página sigue en Vercel; el QR necesita la notebook en la misma red.
 
