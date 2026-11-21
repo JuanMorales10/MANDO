@@ -1,9 +1,9 @@
 // Pantalla del proyector: TV simulada en vivo, código para unirse y aparatos conectados.
 
-import { renderTV } from "./tv.js";
+import { renderTV, unlockTVAudio } from "./tv.js";
 import { initialState, applyAction } from "./tv-state.js";
 import { nombreDe, ACCIONES } from "./mando-botones.js";
-import { nuevaSala, normalizarSala, unirseASala } from "./puente.js";
+import { nuevaSala, normalizarSala, unirseASala, aplicarEnSala } from "./puente.js";
 
 
 const $ = (id) => document.getElementById(id);
@@ -12,6 +12,26 @@ let ultimaVista = 0;
 let ocultarAviso = null;
 
 renderTV(tvEl, initialState);
+
+// El navegador no deja sonar la tele hasta que alguien toca la página: un toque al abrirla
+// activa el sonido y pone la pantalla completa en el proyector.
+const activar = $("activar");
+activar?.addEventListener("click", async () => {
+  unlockTVAudio(tvEl);
+  // Que suene ya, sin esperar al próximo botón (si la tele no está en silencio ni apagada).
+  const video = tvEl.querySelector(".mando-tv__video");
+  const tele = tvEl.querySelector(".mando-tv");
+  if (video && tele?.dataset.silencio === "no" && tele?.dataset.encendida === "si") {
+    video.muted = false;
+    video.play().catch(() => {});
+  }
+  activar.hidden = true;
+  try {
+    await document.documentElement.requestFullscreen?.();
+  } catch {
+    // Sin pantalla completa (por ejemplo, en iPhone): sigue igual.
+  }
+});
 
 function pintarConectores(conectores = []) {
   const lista = $("conectores");
@@ -113,7 +133,7 @@ function modoNube() {
       pintar();
     } else if (m.t === "acciones" && Array.isArray(m.a)) {
       const validas = m.a.filter((a) => ACCIONES.includes(a)).slice(0, 20);
-      for (const a of validas) state = applyAction(state, a);
+      for (const a of validas) state = aplicarEnSala(state, a);
       if (validas.length) pintar({ accion: validas.at(-1), origen: "celular", hora: Date.now() });
     }
   });

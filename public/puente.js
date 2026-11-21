@@ -8,7 +8,18 @@
 //   {t:"acciones", a:[...], de}    el mando manda uno o más botones
 //   {t:"agente", conectores, de}   la notebook avisa que está conectada y qué controla
 
+import { applyAction } from "./tv-state.js";
+
 export const SERVIDOR_PUENTE = "https://ntfy.sh";
+
+// En la sala, el volumen sube y baja de a 5 para que el cambio se escuche en el lugar.
+export const PASO_VOLUMEN = 5;
+export function aplicarEnSala(state, accion) {
+  const veces = accion === "VOL_UP" || accion === "VOL_DOWN" ? PASO_VOLUMEN : 1;
+  let s = state;
+  for (let i = 0; i < veces; i += 1) s = applyAction(s, accion);
+  return s;
+}
 const PREFIJO = "mando-v1-";
 const LETRAS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sin 0/O ni 1/I para no confundir
 

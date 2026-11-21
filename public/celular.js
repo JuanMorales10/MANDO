@@ -3,7 +3,7 @@
 
 import { BOTONES, SECCIONES, BOTON, FAVORITOS_INICIALES, nombreDe, ACCIONES } from "./mando-botones.js";
 import { applyAction, initialState } from "./tv-state.js";
-import { unirseASala, normalizarSala, esSalaNube } from "./puente.js";
+import { unirseASala, normalizarSala, esSalaNube, aplicarEnSala } from "./puente.js";
 
 const CLAVE_CONFIG = "mando-celular-v1";
 const CLAVE_CODIGO = "mando-sala";
@@ -177,7 +177,7 @@ function mostrarNube() {
 
 function enviarNube(accion) {
   // Se ve al instante en el celular; los toques seguidos viajan juntos para no saturar el puente.
-  nube.state = applyAction(nube.state, accion);
+  nube.state = aplicarEnSala(nube.state, accion);
   mostrarNube();
   nube.cola.push(accion);
   clearTimeout(nube.timer);
@@ -215,7 +215,7 @@ function conectarNube(sala) {
           mostrarNube();
         } else if (m.t === "acciones" && Array.isArray(m.a)) {
           // Otro celular tocó algo: lo reflejamos acá también.
-          for (const a of m.a) if (ACCIONES.includes(a)) nube.state = applyAction(nube.state, a);
+          for (const a of m.a) if (ACCIONES.includes(a)) nube.state = aplicarEnSala(nube.state, a);
           mostrarNube();
         }
       },
