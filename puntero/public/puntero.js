@@ -1,184 +1,449 @@
-// Página del teléfono: lee el giroscopio y manda movimientos a la Mac.
-(() => {
-  'use strict';
-  const $ = (id) => document.getElementById(id);
-  const TOKEN = new URLSearchParams(location.hash.slice(1)).get('t') || '';
-  const ID = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 16);
-  const ES_IOS = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+// Página del teléfono: el mando de MANDO + un puntero.
+// Manda al puente solo mensajes de una lista cerrada:
+//   {t:"m",x,y} mover · {t:"c"} clic · {t:"r"} clic derecho · {t:"z"} centrar
+//   {t:"s",y} rueda · {t:"k",n:"izq"|"der"|...} tecla para pasar diapositivas
+//   {t:"a",n:"VOL_UP"|"VOL_DOWN"|"MUTE"} acción del mando
 
-  // Ajustes de sensación
-  const ZONA_MUERTA = 1.2;  // grados/seg: por debajo de esto se ignora (temblor de la mano)
-  const SUAVIZADO = 0.45;   // 0 = sin suavizar, 1 = congelado
+import { mountRemote } from "./mando/remote.js";
 
-  const cfg = {
-    get ganancia() { return +$('ganancia').value; }, // píxeles por grado
-    get mantener() { return $('mantener').checked; },
-    get invX() { return $('invX').checked ? -1 : 1; },
-    get invY() { return $('invY').checked ? -1 : 1; },
+const $ = (id) => document.getElementById(id);
+const estado = $("estado");
+const aviso = $("aviso");
+const volumen = $("volumen");
+const pad = $("pad");
+const activar = $("activar");
+
+// El código viene en el QR, después del # (así no viaja en los pedidos de la página).
+const token = new URLSearchParams(location.hash.slice(1)).get("t") ||
+  new URLSearchParams(location.search).get("t") || "";
+const ID = Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => (b % 36).toString(36)).join("");
+
+// ---------- Conexión ----------
+
+let ws = null;
+let reintento = 0;
+let fallosWs = 0;
+let modoPost = false; // respaldo: si el WebSocket no abre, las mismas órdenes van por POST
+let cortado = false;
+
+function ponerEstado(clave, texto) {
+  estado.dataset.estado = clave;
+  estado.textContent = texto;
+}
+
+function alRecibir(m) {
+  if (!m) return;
+  if (m.t === "vol") {
+    volumen.textContent = m.m ? `Mac en silencio (volumen ${m.v})` : `Volumen de la Mac: ${m.v}`;
+  }
+  if (m.t === "hola") {
+    $("sin-clics").hidden = m.clics !== false;
+  }
+}
+
+function conectar() {
+  if (cortado) return;
+  if (!token) {
+    ponerEstado("sin", "Falta el código");
+    aviso.textContent = "Abrí la página escaneando el QR de la compu.";
+    return;
+  }
+  if (modoPost) return;
+  const esquema = location.protocol === "http:" ? "ws" : "wss";
+  let abrio = false;
+  ws = new WebSocket(`${esquema}://${location.host}/ws?t=${encodeURIComponent(token)}`);
+  ws.onopen = () => {
+    abrio = true;
+    reintento = 0;
+    fallosWs = 0;
+    ponerEstado("ok", "Conectado");
   };
-
-  // ---------- transporte: WebSocket, y si no abre, POST ----------
-  let ws = null, modo = null, activo = false, cola = [], enviando = false;
-  function estado(texto, clase = '') { const e = $('estado'); e.textContent = texto; e.className = 'estado ' + clase; }
-  function aviso(texto) { const a = $('aviso'); a.textContent = texto; a.hidden = !texto; }
-
-  function conectar() {
-    return new Promise((ok) => {
-      let listo = false;
-      const fin = (m) => { if (!listo) { listo = true; modo = m; ok(m); } };
-      try {
-        ws = new WebSocket(`${location.protocol === 'http:' ? 'ws' : 'wss'}://${location.host}/ws?t=${TOKEN}&id=${ID}`);
-        ws.onopen = () => fin('ws');
-        ws.onmessage = (ev) => {
-          try { const m = JSON.parse(ev.data); if (m.t === 'hola' && !m.clics) aviso('La Mac todavía no dio permiso de Accesibilidad: mueve, pero no hace clic.'); } catch {}
-        };
-        ws.onclose = () => { if (modo === 'ws' && activo) cortar('Se cortó la conexión'); else fin('post'); };
-        ws.onerror = () => fin('post');
-      } catch { fin('post'); }
-      setTimeout(() => fin('post'), 2500);
-    });
-  }
-  async function post(ruta, cuerpo) {
-    const r = await fetch(ruta, { method: 'POST', headers: { 'x-token': TOKEN, 'x-id': ID }, body: cuerpo, keepalive: true });
-    if (r.status === 401) throw new Error('Código inválido: volvé a escanear el QR');
-    if (r.status === 409) throw new Error('Ya hay otro teléfono conectado');
-    if (!r.ok) throw new Error('La Mac no respondió');
-  }
-  function mandar(msg) {
-    if (!activo) return;
-    if (modo === 'ws') { if (ws.readyState === 1 && ws.bufferedAmount < 4096) ws.send(JSON.stringify(msg)); return; }
-    // POST: juntar movimientos para no saturar
-    const ult = cola[cola.length - 1];
-    if (msg.t === 'm' && ult && ult.t === 'm') { ult.dx += msg.dx; ult.dy += msg.dy; } else cola.push(msg);
-    vaciar();
-  }
-  async function vaciar() {
-    if (enviando || !cola.length) return;
-    enviando = true;
-    const lote = cola.splice(0, 32);
-    for (const m of lote) if (m.t === 'm') { m.dx = Math.max(-400, Math.min(400, m.dx)); m.dy = Math.max(-400, Math.min(400, m.dy)); }
-    try { await post('/m', JSON.stringify(lote)); } catch (e) { cortar(e.message); }
-    enviando = false;
-    if (cola.length) vaciar();
-  }
-
-  // ---------- giroscopio ----------
-  let accX = 0, accY = 0, vx = 0, vy = 0, tPrev = 0, huboSensor = false, dedo = false;
-  function alMover(ev) {
-    const r = ev.rotationRate;
-    if (!r || r.alpha == null) return;
-    huboSensor = true;
-    const ahora = performance.now();
-    const dt = Math.min(0.05, tPrev ? (ahora - tPrev) / 1000 : 0.016);
-    tPrev = ahora;
-    // Ejes del teléfono: alpha = giro sobre X (cabecear), beta = sobre Y, gamma = sobre Z.
-    const wx = r.alpha || 0, wy = r.beta || 0, wz = r.gamma || 0;
-    // Giro a izquierda/derecha = giro alrededor de la vertical real, sin importar cómo se agarre.
-    let yaw = wz;
-    const g = ev.accelerationIncludingGravity;
-    if (g && g.x != null) {
-      const s = ES_IOS ? -1 : 1; // iOS informa la gravedad con el signo al revés
-      const n = Math.hypot(g.x, g.y, g.z) || 1;
-      yaw = s * (wx * g.x + wy * g.y + wz * g.z) / n;
-    }
-    let pitch = wx;
-    if (Math.abs(yaw) < ZONA_MUERTA) yaw = 0;
-    if (Math.abs(pitch) < ZONA_MUERTA) pitch = 0;
-    vx = vx * SUAVIZADO + yaw * (1 - SUAVIZADO);
-    vy = vy * SUAVIZADO + pitch * (1 - SUAVIZADO);
-    if (cfg.mantener && !dedo) { vx = vy = 0; return; }
-    accX += -vx * dt * cfg.ganancia * cfg.invX;
-    accY += -vy * dt * cfg.ganancia * cfg.invY;
-  }
-  let ultimoVivo = 0;
-  function cuadro(t) {
-    if (!activo) return;
-    const dx = Math.max(-400, Math.min(400, accX)), dy = Math.max(-400, Math.min(400, accY));
-    if (Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5) {
-      mandar({ t: 'm', dx: Math.round(dx * 10) / 10, dy: Math.round(dy * 10) / 10 });
-      accX = accY = 0; ultimoVivo = t;
-    } else if (t - ultimoVivo > 2000) { mandar({ t: 'k' }); ultimoVivo = t; }
-    requestAnimationFrame(cuadro);
-  }
-
-  // ---------- zona táctil: toque = clic, arrastrar = mover ----------
-  const pad = $('pad');
-  let tx = 0, ty = 0, t0 = 0, recorrido = 0;
-  pad.addEventListener('pointerdown', (e) => {
-    pad.setPointerCapture(e.pointerId);
-    dedo = true; tx = e.clientX; ty = e.clientY; t0 = performance.now(); recorrido = 0;
-    pad.classList.add('apretado');
-  });
-  pad.addEventListener('pointermove', (e) => {
-    if (!dedo) return;
-    const dx = e.clientX - tx, dy = e.clientY - ty;
-    tx = e.clientX; ty = e.clientY; recorrido += Math.abs(dx) + Math.abs(dy);
-    if (recorrido > 10) { accX += dx * 1.6; accY += dy * 1.6; }
-  });
-  const soltar = (e) => {
-    if (!dedo) return;
-    dedo = false; pad.classList.remove('apretado');
-    if (e.type === 'pointerup' && recorrido <= 10 && performance.now() - t0 < 350) {
-      mandar({ t: 'c' });
-      if (navigator.vibrate) navigator.vibrate(15);
+  ws.onmessage = (e) => {
+    try {
+      alRecibir(JSON.parse(e.data));
+    } catch {
+      /* mensaje raro: se ignora */
     }
   };
-  pad.addEventListener('pointerup', soltar);
-  pad.addEventListener('pointercancel', soltar);
-  $('derecho').onclick = () => mandar({ t: 'r' });
-  $('centrar').onclick = () => { accX = accY = 0; mandar({ t: 'z' }); };
-  $('mantener').onchange = () => {
-    $('padTexto').innerHTML = cfg.mantener
-      ? 'Mantené apoyado para mover<br><small>Toque corto = clic</small>'
-      : 'Tocá acá = clic<br><small>Arrastrar el dedo también mueve</small>';
-  };
-
-  // Recordar los ajustes en este teléfono
-  for (const id of ['mantener', 'invX', 'invY', 'ganancia']) {
-    const el = $(id), esCheck = el.type === 'checkbox';
-    try { const v = localStorage.getItem('puntero.' + id); if (v != null) { if (esCheck) el.checked = v === '1'; else el.value = v; } } catch {}
-    el.addEventListener('change', () => { try { localStorage.setItem('puntero.' + id, esCheck ? (el.checked ? '1' : '0') : el.value); } catch {} });
-  }
-  $('mantener').dispatchEvent(new Event('change'));
-
-  // ---------- activar / cortar ----------
-  let candado = null;
-  async function activar() {
-    aviso('');
-    if (!TOKEN) return aviso('Falta el código. Escaneá el QR que muestra la Mac.');
-    // En iPhone el permiso tiene que pedirse dentro del toque.
-    let permiso = 'granted';
-    if (ES_IOS) { try { permiso = await DeviceMotionEvent.requestPermission(); } catch { permiso = 'denied'; } }
-    estado('Conectando…');
-    await conectar();
-    activo = true;
-    try { if (modo === 'post') await post('/m', '[{"t":"k"}]'); } catch (e) { activo = false; estado('Sin conectar', 'mal'); return aviso(e.message); }
-    $('inicio').hidden = true; $('control').hidden = false;
-    estado(modo === 'ws' ? 'Conectado' : 'Conectado (modo lento)', 'ok');
-    window.addEventListener('devicemotion', alMover);
-    requestAnimationFrame(cuadro);
-    try { candado = await navigator.wakeLock?.request('screen'); } catch {}
-    if (permiso !== 'granted') aviso('No diste permiso de movimiento. Igual podés mover arrastrando el dedo.');
-    setTimeout(() => {
-      if (activo && !huboSensor && permiso === 'granted')
-        $('padTexto').innerHTML = 'Este teléfono no informa movimiento<br><small>Arrastrá el dedo para mover · toque = clic</small>';
-    }, 1500);
-  }
-  function cortar(motivo = '') {
-    if (!activo && !ws) return;
-    const era = modo;
-    activo = false; cola = [];
-    window.removeEventListener('devicemotion', alMover);
-    if (era === 'post') fetch('/bye', { method: 'POST', headers: { 'x-token': TOKEN, 'x-id': ID }, keepalive: true }).catch(() => {});
-    modo = null;
-    try { ws && ws.close(); } catch {}
+  ws.onclose = (e) => {
     ws = null;
-    try { candado && candado.release(); } catch {}
-    $('control').hidden = true; $('inicio').hidden = false;
-    estado('Desconectado', motivo ? 'mal' : '');
-    aviso(motivo);
+    if (cortado) return;
+    if (e.code === 4000) {
+      ponerEstado("sin", "Otro teléfono tomó el control");
+      return;
+    }
+    if (e.code === 4001) {
+      ponerEstado("sin", "La compu cortó");
+      return;
+    }
+    ponerEstado("sin", "Sin conexión");
+    if (!abrio && ++fallosWs >= 2) {
+      probarPost();
+      return;
+    }
+    reintento = Math.min(reintento + 1, 6);
+    setTimeout(conectar, 400 * reintento);
+  };
+  ws.onerror = () => {};
+}
+
+// ----- Respaldo por POST -----
+
+let cola = [];
+let enviando = false;
+let ultimoPost = 0;
+
+async function post(lista) {
+  const r = await fetch("/m", {
+    method: "POST",
+    headers: { "x-token": token, "x-id": ID },
+    body: JSON.stringify(lista),
+  });
+  ultimoPost = performance.now();
+  if (r.status === 401) throw new Error("Código vencido: escaneá el QR otra vez");
+  if (r.status === 409) throw new Error("Otro teléfono tiene el control");
+  if (!r.ok) throw new Error("Sin conexión");
+  const datos = await r.json();
+  alRecibir({ t: "hola", clics: datos.clics });
+  alRecibir(datos.vol);
+}
+
+async function probarPost() {
+  try {
+    await post([]);
+    modoPost = true;
+    ponerEstado("ok", "Conectado");
+  } catch (e) {
+    ponerEstado("sin", e.message);
+    fallosWs = 0;
+    setTimeout(conectar, 2000);
   }
-  $('activar').onclick = activar;
-  $('cortar').onclick = () => cortar();
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { accX = accY = 0; } });
+}
+
+async function vaciarCola() {
+  if (enviando || !modoPost) return;
+  enviando = true;
+  while (cola.length && modoPost) {
+    const lote = cola.splice(0, 16);
+    try {
+      await post(lote);
+    } catch (e) {
+      modoPost = false;
+      cola = [];
+      ponerEstado("sin", e.message);
+      fallosWs = 0;
+      setTimeout(conectar, 2000);
+    }
+  }
+  enviando = false;
+}
+// "Sigo acá", para que la compu no dé por perdido al teléfono.
+setInterval(() => {
+  if (modoPost && !enviando && performance.now() - ultimoPost > 2500) {
+    cola.push({ t: "x" });
+    vaciarCola();
+  }
+}, 1000);
+
+function enviar(m) {
+  if (cortado) return;
+  if (modoPost) {
+    const ult = cola[cola.length - 1];
+    if (ult && ult.t === m.t && (m.t === "m" || m.t === "s")) {
+      if (m.t === "m") ult.x = Math.max(-400, Math.min(400, ult.x + m.x));
+      ult.y = Math.max(m.t === "m" ? -400 : -300, Math.min(m.t === "m" ? 400 : 300, ult.y + m.y));
+    } else if (cola.length < 64) {
+      cola.push({ ...m });
+    }
+    vaciarCola();
+    return;
+  }
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
+}
+
+// ---------- Mando ----------
+
+mountRemote($("mando-root"), (accion) => {
+  enviar({ t: "a", n: accion });
+  if (navigator.vibrate) navigator.vibrate(12);
+});
+
+// ---------- Ajustes ----------
+
+const guardados = (() => {
+  try {
+    return JSON.parse(localStorage.getItem("mando-puntero-v1")) || {};
+  } catch {
+    return {};
+  }
 })();
+const ajustes = { velocidad: 22, apretar: false, invX: false, invY: false, ...guardados };
+
+function guardar() {
+  try {
+    localStorage.setItem("mando-puntero-v1", JSON.stringify(ajustes));
+  } catch {
+    /* sin almacenamiento, sigue andando */
+  }
+}
+
+$("velocidad").value = ajustes.velocidad;
+$("velocidad-valor").textContent = ajustes.velocidad;
+$("apretar").checked = ajustes.apretar;
+$("inv-x").checked = ajustes.invX;
+$("inv-y").checked = ajustes.invY;
+
+$("velocidad").oninput = (e) => {
+  ajustes.velocidad = Number(e.target.value);
+  $("velocidad-valor").textContent = ajustes.velocidad;
+  guardar();
+};
+$("apretar").onchange = (e) => {
+  ajustes.apretar = e.target.checked;
+  guardar();
+};
+$("inv-x").onchange = (e) => {
+  ajustes.invX = e.target.checked;
+  guardar();
+};
+$("inv-y").onchange = (e) => {
+  ajustes.invY = e.target.checked;
+  guardar();
+};
+
+// ---------- Envío de movimiento, agrupado por cuadro ----------
+
+let accX = 0;
+let accY = 0;
+let accRueda = 0;
+
+function vaciar() {
+  if (Math.abs(accX) >= 0.5 || Math.abs(accY) >= 0.5) {
+    const x = Math.max(-400, Math.min(400, accX));
+    const y = Math.max(-400, Math.min(400, accY));
+    enviar({ t: "m", x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
+    accX = 0;
+    accY = 0;
+  }
+  if (Math.abs(accRueda) >= 2) {
+    enviar({ t: "s", y: Math.round(Math.max(-300, Math.min(300, accRueda))) });
+    accRueda = 0;
+  }
+  requestAnimationFrame(vaciar);
+}
+requestAnimationFrame(vaciar);
+
+// ---------- Puntero por movimiento del teléfono ----------
+
+const esIOS = typeof DeviceMotionEvent !== "undefined" &&
+  typeof DeviceMotionEvent.requestPermission === "function";
+
+let giroActivo = false;
+let apoyado = false;
+let ultimo = 0;
+let suaveX = 0;
+let suaveY = 0;
+let llegaronDatos = false;
+
+const ZONA_MUERTA = 0.8; // grados por segundo: por debajo de esto no se mueve
+const SUAVIZADO = 0.45;
+
+function alMoverse(e) {
+  const r = e.rotationRate;
+  if (!r || r.alpha == null) return;
+  llegaronDatos = true;
+
+  const ahora = performance.now();
+  const dt = Math.min(0.05, ultimo ? (ahora - ultimo) / 1000 : 0);
+  ultimo = ahora;
+  if (!giroActivo || dt === 0) return;
+  if (ajustes.apretar && !apoyado) {
+    suaveX = 0;
+    suaveY = 0;
+    return;
+  }
+
+  // Giro del teléfono en sus propios ejes (grados por segundo).
+  // Los navegadores entregan: alpha = giro sobre el eje X del teléfono (cabecear),
+  // beta = sobre el eje Y (rolar) y gamma = sobre el eje Z (girar acostado).
+  const wx = r.alpha || 0;
+  const wy = r.beta || 0;
+  const wz = r.gamma || 0;
+
+  // Giro a izquierda/derecha = giro alrededor de la vertical real (la gravedad),
+  // así funciona con el teléfono acostado o parado.
+  const g = e.accelerationIncludingGravity;
+  let giroLateral = wz;
+  if (g && g.x != null) {
+    const largo = Math.hypot(g.x, g.y, g.z);
+    if (largo > 1) giroLateral = (wx * g.x + wy * g.y + wz * g.z) / largo;
+    if (esIOS) giroLateral = -giroLateral; // iOS informa la gravedad con el signo opuesto
+  }
+  let giroVertical = wx;
+
+  if (Math.abs(giroLateral) < ZONA_MUERTA) giroLateral = 0;
+  if (Math.abs(giroVertical) < ZONA_MUERTA) giroVertical = 0;
+
+  suaveX += (giroLateral - suaveX) * SUAVIZADO;
+  suaveY += (giroVertical - suaveY) * SUAVIZADO;
+
+  const k = ajustes.velocidad * dt; // píxeles por grado girado
+  accX += -suaveX * k * (ajustes.invX ? -1 : 1);
+  accY += -suaveY * k * (ajustes.invY ? -1 : 1);
+}
+
+let bloqueo = null;
+async function mantenerDespierto() {
+  try {
+    if ("wakeLock" in navigator) bloqueo = await navigator.wakeLock.request("screen");
+  } catch {
+    bloqueo = null;
+  }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && giroActivo) mantenerDespierto();
+});
+
+function pintarActivar() {
+  activar.dataset.activo = giroActivo ? "si" : "no";
+  activar.textContent = giroActivo ? "Pausar puntero" : "Activar puntero";
+}
+
+activar.onclick = async () => {
+  if (giroActivo) {
+    giroActivo = false;
+    pintarActivar();
+    aviso.textContent = "Puntero en pausa.";
+    return;
+  }
+  if (typeof DeviceMotionEvent === "undefined") {
+    aviso.textContent = "Este navegador no da acceso al sensor de movimiento. Usá la zona táctil.";
+    return;
+  }
+  try {
+    if (esIOS) {
+      const permiso = await DeviceMotionEvent.requestPermission();
+      if (permiso !== "granted") {
+        aviso.textContent = "Sin permiso de movimiento. Usá la zona táctil o volvé a intentar.";
+        return;
+      }
+    }
+  } catch {
+    aviso.textContent = "No se pudo pedir el permiso de movimiento. Usá la zona táctil.";
+    return;
+  }
+  window.removeEventListener("devicemotion", alMoverse);
+  window.addEventListener("devicemotion", alMoverse);
+  giroActivo = true;
+  llegaronDatos = false;
+  ultimo = 0;
+  pintarActivar();
+  mantenerDespierto();
+  aviso.textContent = "Mové el teléfono como un puntero láser.";
+  setTimeout(() => {
+    if (giroActivo && !llegaronDatos) {
+      aviso.textContent = "El sensor de movimiento no responde. Usá la zona táctil.";
+    }
+  }, 1500);
+};
+
+// ---------- Zona táctil: arrastrar mueve, toque corto hace clic ----------
+
+let puntero = null;
+const dedos = new Map(); // dedos apoyados en la zona táctil
+let huboDos = false;
+
+pad.addEventListener("pointerdown", (e) => {
+  pad.setPointerCapture(e.pointerId);
+  dedos.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (dedos.size >= 2) huboDos = true;
+  if (dedos.size === 1) {
+    huboDos = false;
+    puntero = { id: e.pointerId, inicio: performance.now(), recorrido: 0 };
+  }
+  apoyado = true;
+  pad.dataset.apoyado = "si";
+});
+
+pad.addEventListener("pointermove", (e) => {
+  const d = dedos.get(e.pointerId);
+  if (!d) return;
+  const dx = e.clientX - d.x;
+  const dy = e.clientY - d.y;
+  d.x = e.clientX;
+  d.y = e.clientY;
+  if (puntero) puntero.recorrido += Math.abs(dx) + Math.abs(dy);
+  if (dedos.size >= 2) {
+    // Dos dedos: rueda del mouse (como en un trackpad).
+    accRueda += dy * 1.4;
+    return;
+  }
+  // Con el puntero por movimiento activo, el dedo solo sirve de "embrague".
+  if (!giroActivo) {
+    const ganancia = ajustes.velocidad / 11;
+    accX += dx * ganancia;
+    accY += dy * ganancia;
+  }
+});
+
+function soltar(e) {
+  if (!dedos.delete(e.pointerId)) return;
+  if (dedos.size > 0) return;
+  const corto = puntero && performance.now() - puntero.inicio < 250 && puntero.recorrido < 10;
+  puntero = null;
+  apoyado = false;
+  pad.dataset.apoyado = "no";
+  if (corto && e.type === "pointerup") {
+    enviar({ t: huboDos ? "r" : "c" }); // toque con dos dedos = clic derecho
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+}
+pad.addEventListener("pointerup", soltar);
+pad.addEventListener("pointercancel", soltar);
+
+for (const boton of document.querySelectorAll("[data-tecla]")) {
+  boton.onclick = () => {
+    enviar({ t: "k", n: boton.dataset.tecla });
+    if (navigator.vibrate) navigator.vibrate(10);
+  };
+}
+for (const boton of document.querySelectorAll("[data-rueda]")) {
+  boton.onclick = () => enviar({ t: "s", y: Number(boton.dataset.rueda) });
+}
+
+$("cortar").onclick = () => {
+  cortado = true;
+  giroActivo = false;
+  pintarActivar();
+  if (modoPost) fetch("/chau", { method: "POST", headers: { "x-token": token, "x-id": ID }, keepalive: true }).catch(() => {});
+  modoPost = false;
+  if (ws) ws.close();
+  if (bloqueo) bloqueo.release().catch(() => {});
+  ponerEstado("sin", "Desconectado");
+  aviso.textContent = "Cortaste la conexión. Para volver, recargá la página.";
+};
+
+$("clic").onclick = () => enviar({ t: "c" });
+$("derecho").onclick = () => enviar({ t: "r" });
+$("centrar").onclick = () => enviar({ t: "z" });
+
+// ---------- Pestañas ----------
+
+function irA(vista) {
+  for (const b of document.querySelectorAll("[data-ir]")) b.setAttribute("aria-pressed", String(b.dataset.ir === vista));
+  for (const s of document.querySelectorAll("[data-vista]")) s.hidden = s.dataset.vista !== vista;
+  try {
+    sessionStorage.setItem("mando-puntero-vista", vista);
+  } catch {
+    /* sin almacenamiento, sigue andando */
+  }
+}
+for (const b of document.querySelectorAll("[data-ir]")) b.onclick = () => irA(b.dataset.ir);
+try {
+  const guardada = sessionStorage.getItem("mando-puntero-vista");
+  if (guardada && document.querySelector(`[data-ir="${CSS.escape(guardada)}"]`)) irA(guardada);
+} catch {
+  /* sin almacenamiento, sigue andando */
+}
+
+conectar();
