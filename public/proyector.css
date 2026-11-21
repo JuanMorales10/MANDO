@@ -1,0 +1,77 @@
+/* Pantalla del proyector. Prefijo .pro · paleta "Brasa" (la misma del celular). */
+
+.pro {
+  /* La TV de Nico toma estas variables, así que adopta la paleta sin tocar tv.css. */
+  --azul-noche: #0C0C10;
+  --marfil: #F5F2EC;
+  --lima: #FF6A3D;
+}
+
+.pro {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--azul-noche, #101522);
+  color: var(--marfil, #F5F4EE);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.pro__escena {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(260px, 26vw, 420px);
+  gap: 2.5vw;
+  align-items: center;
+  min-height: 100vh;
+  padding: 3vh 3vw;
+  box-sizing: border-box;
+}
+
+.pro__tv { min-width: 0; }
+
+.pro__lado { display: grid; gap: 3vh; align-content: center; }
+.pro__lado h2 { margin: 0 0 1vh; font-size: clamp(1.1rem, 1.6vw, 1.8rem); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
+
+.pro__marca { margin: 0; font-weight: 800; font-size: clamp(1.6rem, 2.6vw, 3rem); letter-spacing: 0.1em; }
+.pro__marca span { display: block; font-weight: 500; font-size: 0.45em; letter-spacing: 0.02em; color: var(--lima, #C9F76A); }
+
+.pro__unirse[hidden] { display: none; }
+.pro__unirse {
+  border: 3px solid var(--lima, #C9F76A);
+  border-radius: 24px;
+  padding: 2.5vh 1.5vw;
+}
+.pro__unirse h2 { opacity: 1; color: var(--lima, #C9F76A); }
+.pro__url { margin: 0 0 2vh; font: 700 clamp(1rem, 1.5vw, 1.7rem)/1.3 ui-monospace, "SF Mono", Menlo, monospace; word-break: break-all; }
+.pro__codigo-titulo { margin: 0; opacity: 0.75; font-size: clamp(0.9rem, 1.2vw, 1.3rem); }
+.pro__codigo { margin: 0; font: 800 clamp(3rem, 6vw, 6.5rem)/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.12em; color: var(--lima, #C9F76A); }
+
+.pro__conectores { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.2vh; }
+.pro__conectores li { display: grid; gap: 2px; font-size: clamp(1rem, 1.4vw, 1.6rem); }
+.pro__conectores li[data-ok="true"] strong { color: var(--lima, #C9F76A); }
+.pro__conectores li[data-ok="false"] strong { color: #ffb86b; }
+.pro__conectores span { opacity: 0.75; font-size: 0.75em; }
+
+.pro__aviso {
+  position: fixed;
+  left: 50%;
+  bottom: 4vh;
+  transform: translate(-50%, 200%);
+  margin: 0;
+  padding: 1.6vh 2.4vw;
+  border-radius: 999px;
+  background: var(--lima, #C9F76A);
+  color: #1C0B04;
+  font-weight: 800;
+  font-size: clamp(1.2rem, 2.2vw, 2.4rem);
+  transition: transform 0.25s ease;
+  white-space: nowrap;
+}
+.pro__aviso.is-visible { transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pro__aviso { transition: none; }
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .pro__escena { grid-template-columns: 1fr; }
+}

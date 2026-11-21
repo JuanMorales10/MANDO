@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#101522" />
+    <title>MANDO · Compu real</title>
+    <link rel="stylesheet" href="./mando/identidad.css" />
+    <link rel="stylesheet" href="./mando/remote.css" />
+    <link rel="stylesheet" href="./puntero.css" />
+  </head>
+  <body>
+    <main class="pt">
+      <header class="pt__cabecera">
+        <div>
+          <p class="pt__marca">MANDO · Compu real</p>
+          <p class="pt__volumen" id="volumen">Volumen de la Mac: —</p>
+        </div>
+        <span class="pt__estado" id="estado" data-estado="sin">Sin conexión</span>
+      </header>
+
+      <nav class="pt__vistas" aria-label="Qué querés controlar">
+        <button type="button" data-ir="puntero" aria-pressed="true">Puntero</button>
+        <button type="button" data-ir="mando" aria-pressed="false">Mando</button>
+        <button type="button" data-ir="presentacion" aria-pressed="false">Diapositivas</button>
+      </nav>
+
+      <section class="pt__bloque" data-vista="mando" aria-label="Mando" hidden>
+        <div id="mando-root"></div>
+      </section>
+
+      <section class="pt__bloque" data-vista="puntero" aria-label="Puntero">
+        <h2 class="pt__titulo">Puntero</h2>
+
+        <button class="pt__activar" id="activar" type="button">Activar puntero</button>
+        <p class="pt__aviso" id="aviso" role="status"></p>
+
+        <div class="pt__calibrar" id="calibrar-caja" role="status" hidden>
+          <p class="pt__calibrar-paso" id="calibrar-paso"></p>
+          <p class="pt__calibrar-texto" id="calibrar-texto"></p>
+        </div>
+
+        <p class="pt__alerta" id="sin-clics" hidden>
+          El cursor se mueve, pero la Mac todavía no dio permiso para hacer clic
+          (Ajustes del Sistema → Privacidad y seguridad → Accesibilidad).
+        </p>
+
+        <div class="pt__pad" id="pad" aria-label="Zona táctil: tocá para hacer clic, arrastrá para mover, dos dedos para desplazar">
+          <span id="pad-texto">Tocá = clic · Arrastrá = mover<br /><small>Dos dedos: desplazar · Toque con dos dedos: clic derecho</small></span>
+        </div>
+
+        <div class="pt__fila">
+          <button class="pt__boton" id="clic" type="button">Clic</button>
+          <button class="pt__boton" id="derecho" type="button">Clic derecho</button>
+          <button class="pt__boton" id="centrar" type="button">Centrar</button>
+        </div>
+
+        <div class="pt__fila pt__fila--2">
+          <button class="pt__boton" data-rueda="120" type="button">▲ Subir</button>
+          <button class="pt__boton" data-rueda="-120" type="button">▼ Bajar</button>
+        </div>
+      </section>
+
+      <section class="pt__bloque" data-vista="presentacion" aria-label="Presentación" hidden>
+        <h2 class="pt__titulo">Presentación</h2>
+        <div class="pt__fila pt__fila--2">
+          <button class="pt__boton pt__boton--alto" data-tecla="izq" type="button">◀ Anterior</button>
+          <button class="pt__boton pt__boton--alto pt__boton--acento" data-tecla="der" type="button">Siguiente ▶</button>
+        </div>
+        <div class="pt__fila">
+          <button class="pt__boton" data-tecla="espacio" type="button">Espacio</button>
+          <button class="pt__boton" data-tecla="enter" type="button">Enter</button>
+          <button class="pt__boton" data-tecla="esc" type="button">Esc</button>
+        </div>
+      </section>
+
+      <section class="pt__bloque" data-vista="puntero" aria-label="Ajustes">
+        <h2 class="pt__titulo">Ajustes</h2>
+        <div class="pt__ajustes">
+          <label class="pt__ajuste">
+            <span>Velocidad <b id="velocidad-valor"></b></span>
+            <input id="velocidad" type="range" min="6" max="60" step="1" />
+          </label>
+          <label class="pt__check"><input id="apretar" type="checkbox" /> Mover solo con el dedo apoyado</label>
+          <label class="pt__check"><input id="inv-x" type="checkbox" /> Invertir izquierda/derecha</label>
+          <label class="pt__check"><input id="inv-y" type="checkbox" /> Invertir arriba/abajo</label>
+        </div>
+        <button class="pt__boton" id="calibrar" type="button">Calibrar de nuevo</button>
+        <button class="pt__boton pt__boton--cortar" id="cortar" type="button">Desconectar</button>
+      </section>
+    </main>
+    <script type="module" src="./puntero.js"></script>
+  </body>
+</html>

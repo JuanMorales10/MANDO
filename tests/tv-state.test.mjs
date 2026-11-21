@@ -3,12 +3,7 @@ import assert from "node:assert/strict";
 import { initialState, applyAction } from "../public/tv-state.js";
 
 test("estado inicial acordado", () => {
-  assert.deepEqual(initialState, {
-    power: true,
-    volume: 15,
-    muted: false,
-    channel: 1,
-  });
+  assert.deepEqual(initialState, { power: true, volume: 15, muted: false, channel: 1 });
 });
 
 test("MUTE silencia y dos pulsaciones vuelven al estado inicial", () => {
@@ -58,17 +53,18 @@ test("con la TV apagada, las demás acciones no hacen nada", () => {
   }
 });
 
+test("el recorrido de la demo: silenciar y volver", () => {
+  let state = initialState;
+  for (const action of ["VOL_UP", "VOL_UP", "MUTE"]) state = applyAction(state, action);
+  assert.deepEqual(state, { ...initialState, volume: 17, muted: true });
+  state = applyAction(state, "MUTE");
+  assert.equal(state.muted, false);
+  assert.equal(state.volume, 17);
+});
+
 test("no modifica el objeto original", () => {
   const state = Object.freeze({ ...initialState });
-  for (const action of [
-    "MUTE",
-    "VOL_UP",
-    "VOL_DOWN",
-    "CH_UP",
-    "CH_DOWN",
-    "POWER",
-    "NOPE",
-  ]) {
+  for (const action of ["MUTE", "VOL_UP", "VOL_DOWN", "CH_UP", "CH_DOWN", "POWER", "NOPE"]) {
     applyAction(state, action);
   }
   assert.deepEqual(state, initialState);
