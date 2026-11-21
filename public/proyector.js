@@ -56,6 +56,7 @@ function mostrarCodigo(codigo, direccion, joinUrl) {
     return casilla;
   }));
   $("codigo").setAttribute("aria-label", `Código ${codigo}`);
+  $("codigo").style.setProperty("--n", String(codigo).length);
   $("url").textContent = direccion;
   const qr = $("qr");
   if (qr && joinUrl) {
