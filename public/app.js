@@ -1,35 +1,35 @@
 import { mountRemote } from "./remote.js";
-
-const LABELS = {
-  MUTE: "SILENCIO",
-  VOL_UP: "VOLUMEN +",
-  VOL_DOWN: "VOLUMEN −",
-};
+import { initialState, applyAction } from "./tv-state.js";
+import { renderTV, unlockTVAudio } from "./tv.js";
 
 const remoteRoot = document.querySelector("#remote-root");
-const actionLog = document.querySelector("#action-log");
+const tvRoot = document.querySelector("#tv-root");
 
-if (!remoteRoot || !actionLog) {
-  throw new Error("Faltan #remote-root o #action-log en la demo");
+if (!remoteRoot || !tvRoot) {
+  throw new Error("Faltan #remote-root o #tv-root en la demo");
 }
 
-let pulseTimer = 0;
+let state = { ...initialState };
 
-function showAction(action) {
-  actionLog.textContent = LABELS[action] || action;
-  actionLog.classList.remove("is-pulse");
-  // Force reflow so the pulse can replay on repeated presses.
-  void actionLog.offsetWidth;
-  actionLog.classList.add("is-pulse");
-  window.clearTimeout(pulseTimer);
-  pulseTimer = window.setTimeout(() => {
-    actionLog.classList.remove("is-pulse");
-  }, 280);
+function paint() {
+  renderTV(tvRoot, state);
 }
 
 function dispatch(action) {
-  showAction(action);
-  console.log("dispatch", action);
+  unlockTVAudio(tvRoot);
+  state = applyAction(state, action);
+  paint();
+  console.log("dispatch", action, state);
 }
 
+paint();
 mountRemote(remoteRoot, dispatch);
+
+window.addEventListener(
+  "pointerdown",
+  () => {
+    unlockTVAudio(tvRoot);
+    paint();
+  },
+  { once: true, passive: true },
+);
