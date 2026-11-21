@@ -213,6 +213,11 @@ function conectarNube(sala) {
         } else if (m.t === "agente") {
           nube.conectores = Array.isArray(m.conectores) ? m.conectores : [];
           mostrarNube();
+          // La compu tiene MANDO abierto con puntero: se ofrece (funciona en el mismo wifi).
+          if (typeof m.puntero === "string" && /^https:\/\/[\d.]+:\d+\/puntero\//.test(m.puntero)) {
+            $("abrir-puntero").href = m.puntero;
+            $("abrir-puntero").hidden = false;
+          }
         } else if (m.t === "acciones" && Array.isArray(m.a)) {
           // Otro celular tocó algo: lo reflejamos acá también.
           for (const a of m.a) if (ACCIONES.includes(a)) nube.state = aplicarEnSala(nube.state, a);

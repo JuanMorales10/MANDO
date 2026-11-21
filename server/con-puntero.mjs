@@ -45,6 +45,7 @@ if (process.env.SALA_NUBE !== "no") {
   nube = unirAgente(app, {
     sala: (process.env.SALA_NUBE || nuevaSala()).toUpperCase(),
     conectores: () => conectores.map((c) => ({ nombre: c.nombre === "Computadora" ? "La notebook" : c.nombre, ...c.estado() })),
+    puntero: () => (puntero.disponible ? puntero.urlCelular()?.replace("/celular.html", "/puntero/index.html") || null : null),
     log,
   });
 }

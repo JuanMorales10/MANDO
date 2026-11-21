@@ -232,13 +232,18 @@ export async function sumarPuntero(app, {
       log(hayBinario
         ? "cursor.swift cambió: recompilando el ayudante del cursor…"
         : "compilando el ayudante del cursor (solo la primera vez)…");
-      execFileSync("swiftc", ["-O", fuenteSwift, "-o", nuevo], { stdio: "ignore" });
+      // Con límite de tiempo: si Xcode está roto o tarda demasiado, no frena el arranque.
+      execFileSync("swiftc", ["-O", fuenteSwift, "-o", nuevo], { stdio: "ignore", timeout: 90000, killSignal: "SIGKILL" });
       renameSync(nuevo, binario);
     } catch {
       rmSync(nuevo, { force: true });
-      log("no pude compilar el ayudante de Swift: uso el plan B (osascript), no hace falta Xcode");
-      ayudanteComando = "osascript";
-      ayudanteArgs = ["-l", "JavaScript", path.join(AQUI, "cursor-jxa.js")];
+      if (hayBinario) {
+        log("no pude recompilar el ayudante: sigo con el que ya estaba compilado");
+      } else {
+        log("no pude compilar el ayudante de Swift: uso el plan B (osascript), no hace falta Xcode");
+        ayudanteComando = "osascript";
+        ayudanteArgs = ["-l", "JavaScript", path.join(AQUI, "cursor-jxa.js")];
+      }
     }
   }
 
