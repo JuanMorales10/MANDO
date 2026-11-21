@@ -46,11 +46,34 @@
       <button class="modos__btn" data-modo="editar" aria-pressed="false">Editar</button>
     </div>
     <a class="app__puntero" id="abrir-puntero" hidden data-tour="puntero"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 7-6 2-2 6z"/></svg><span><strong>Puntero</strong> Mové el celular y movés el cursor</span></a>
-    <p class="aviso-edicion" id="aviso-edicion" hidden><strong>Editando: los botones no mandan nada.</strong> Tocá ☆ para sumar a tus botones.</p>
+    <p class="aviso-edicion" id="aviso-edicion" hidden><strong>Editando: los botones no mandan nada.</strong> Tocá uno de abajo para sumarlo; tocá uno tuyo para cambiarle tamaño o color.</p>
 
     <div id="mando"></div>
     <p class="error" id="error" role="alert"></p>
   </main>
+
+  <!-- Barra de edición del botón seleccionado -->
+  <div class="barra-edicion" id="barra-edicion" hidden role="region" aria-label="Editar botón">
+    <div class="barra-edicion__cabeza">
+      <strong id="barra-nombre"></strong>
+      <button type="button" class="barra-edicion__listo" id="barra-listo">Listo</button>
+    </div>
+    <p class="barra-edicion__etiqueta">Tamaño</p>
+    <div class="barra-edicion__segmento" id="barra-tamanos" role="group" aria-label="Tamaño"></div>
+    <p class="barra-edicion__etiqueta">Color</p>
+    <div class="barra-edicion__colores" id="barra-colores" role="group" aria-label="Color"></div>
+    <button type="button" class="barra-edicion__quitar" id="barra-quitar">Quitar de mis botones</button>
+  </div>
+
+  <!-- Perfiles de un toque -->
+  <div class="perfiles" id="perfiles" hidden role="dialog" aria-modal="true" aria-labelledby="perfiles-titulo">
+    <div class="perfiles__hoja">
+      <p class="perfiles__eyebrow">Tu mando</p>
+      <h2 class="perfiles__titulo" id="perfiles-titulo">¿Cómo lo vas a usar?</h2>
+      <p class="perfiles__sub">Elegí uno y se arma solo. Lo cambiás cuando quieras en «Editar».</p>
+      <div class="perfiles__lista" id="perfiles-lista"></div>
+    </div>
+  </div>
 
   <!-- Recorrido por pantalla (estilo Pedido Claro) -->
   <div class="tour" id="tour" hidden>
