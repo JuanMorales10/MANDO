@@ -47,6 +47,7 @@
   overflow: hidden;
 }
 
+.mando-tv__player,
 .mando-tv__video {
   position: absolute;
   inset: 0;
@@ -55,6 +56,35 @@
   object-fit: cover;
   background: #000;
   z-index: 0;
+  overflow: hidden;
+}
+
+.mando-tv__yt,
+.mando-tv__player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border: 0;
+  pointer-events: none; /* la TV se controla con el mando, no con el embed */
+}
+
+/* Rellena el marco 16:9 (YouTube deja bandas negras si no) */
+.mando-tv__player {
+  display: grid;
+  place-items: center;
+}
+
+.mando-tv__yt,
+.mando-tv__player iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100%;
+  min-height: 100%;
+  transform: scale(1.35);
+  transform-origin: center center;
 }
 
 .mando-tv__error {
@@ -74,6 +104,37 @@
 
 .mando-tv__error[hidden] {
   display: none;
+}
+
+.mando-tv__activar-audio {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.85em 1.35em;
+  border: 0;
+  border-radius: 999px;
+  background: var(--tv-acento);
+  color: var(--tv-marco);
+  font: inherit;
+  font-size: max(var(--tv-piso), 2.6cqi);
+  font-weight: 800;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 0.6cqi 2cqi rgba(0, 0, 0, 0.45);
+}
+
+.mando-tv__activar-audio[hidden],
+.mando-tv[data-audio="on"] .mando-tv__activar-audio {
+  display: none;
+}
+
+.mando-tv[data-live="si"] .mando-tv__canal::after {
+  content: " · EN VIVO";
+  color: #ff5c5c;
+  font-weight: 800;
 }
 
 .mando-tv__scrim {
@@ -236,6 +297,7 @@
 
 /* Estados */
 .mando-tv[data-encendida="no"] .mando-tv__video,
+.mando-tv[data-encendida="no"] .mando-tv__player,
 .mando-tv[data-encendida="no"] .mando-tv__scrim,
 .mando-tv[data-encendida="no"] .mando-tv__barra,
 .mando-tv[data-encendida="no"] .mando-tv__hud,

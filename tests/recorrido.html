@@ -80,8 +80,8 @@
       const silencio = () => $('.mando-remote__btn[data-action="MUTE"]');
       const posicion = () => silencio().style.gridRow + " | " + silencio().style.gridColumn;
 
-      check("La TV arranca con initialState (volumen 15, sin silencio)",
-        tv()?.dataset.silencio === "no" && tvEl.querySelector('[data-tv="volumen"]')?.textContent === "15");
+      check("La TV arranca con initialState (volumen 55, sin silencio)",
+        tv()?.dataset.silencio === "no" && tvEl.querySelector('[data-tv="volumen"]')?.textContent === "55");
       check("El mando muestra Silencio, Volumen + y Volumen −",
         !!silencio() && !!$('[data-action="VOL_UP"]') && !!$('[data-action="VOL_DOWN"]'));
 
@@ -118,18 +118,18 @@
       check("Tocar Silencio emite una sola acción MUTE", acciones.length === 1 && acciones[0] === "MUTE",
         `emitió ${JSON.stringify(acciones)}`);
       check("La TV muestra SILENCIO", tv()?.dataset.silencio === "si");
-      check("El volumen guardado sigue en 15", tvEl.querySelector('[data-tv="volumen-guardado"]')?.textContent === "15");
+      check("El volumen guardado sigue en 55", tvEl.querySelector('[data-tv="volumen-guardado"]')?.textContent === "55");
 
       // 7. Volver a tocar → vuelve el volumen anterior
       silencio().click();
-      check("Segundo toque: se quita el silencio y vuelve a verse el volumen 15",
-        tv()?.dataset.silencio === "no" && tvEl.querySelector('[data-tv="volumen"]')?.textContent === "15");
+      check("Segundo toque: se quita el silencio y vuelve a verse el volumen 55",
+        tv()?.dataset.silencio === "no" && tvEl.querySelector('[data-tv="volumen"]')?.textContent === "55");
 
       // 8. Volumen + y −
       $('[data-action="VOL_UP"]').click();
-      check("Volumen + sube a 16", tvEl.querySelector('[data-tv="volumen"]')?.textContent === "16");
+      check("Volumen + sube a 56", tvEl.querySelector('[data-tv="volumen"]')?.textContent === "56");
       $('[data-action="VOL_DOWN"]').click();
-      check("Volumen − vuelve a 15", tvEl.querySelector('[data-tv="volumen"]')?.textContent === "15");
+      check("Volumen − vuelve a 55", tvEl.querySelector('[data-tv="volumen"]')?.textContent === "55");
 
       // 9. Recarga: un mando nuevo lee el diseño guardado.
       const otro = document.createElement("div");

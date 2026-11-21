@@ -2,6 +2,8 @@
 // Cada botón manda su acción al servidor de la notebook, que la aplica a los aparatos reales.
 
 import { BOTONES, SECCIONES, BOTON, FAVORITOS_INICIALES, nombreDe } from "./mando-botones.js";
+import { mountAsistente } from "./asistente.js";
+import { CHANNELS, guiaPorGenero } from "./catalogo.js";
 
 const CLAVE_CONFIG = "mando-celular-v1";
 const CLAVE_ONBOARDING = "mando-onboarding-v1";
@@ -74,18 +76,41 @@ async function enviar(accion) {
   }
 }
 
+let pollTimer = null;
+
+async function refrescarEstado() {
+  try {
+    const res = await fetch("/api/estado", { cache: "no-store" });
+    if (!res.ok) {
+      marcarConexion(false);
+      return;
+    }
+    marcarConexion(true);
+    mostrarEstado(await res.json());
+  } catch {
+    marcarConexion(false);
+  }
+}
+
 function escuchar() {
   eventos?.close();
-  eventos = new EventSource("/api/eventos");
-  eventos.onopen = () => marcarConexion(true);
-  eventos.onerror = () => marcarConexion(false);
-  eventos.onmessage = (m) => {
-    try {
-      mostrarEstado(JSON.parse(m.data));
-    } catch {
-      // Mensaje incompleto: esperamos el próximo.
-    }
-  };
+  clearInterval(pollTimer);
+  // Polling: Vercel no mantiene SSE largo; también sirve en local.
+  pollTimer = setInterval(refrescarEstado, 700);
+  refrescarEstado();
+  try {
+    eventos = new EventSource("/api/eventos");
+    eventos.onmessage = (m) => {
+      try {
+        mostrarEstado(JSON.parse(m.data));
+        marcarConexion(true);
+      } catch {
+        // ignore
+      }
+    };
+  } catch {
+    // Polling alcanza.
+  }
 }
 
 function marcarConexion(on) {
@@ -93,10 +118,18 @@ function marcarConexion(on) {
   $("conexion").textContent = on ? "Conectado" : "Reconectando…";
 }
 
-function mostrarEstado({ state, conectores = [] }) {
+function canalMeta(channel) {
+  const n = Number(channel) || 1;
+  const i = ((n - 1) % CHANNELS.length + CHANNELS.length) % CHANNELS.length;
+  return { ...CHANNELS[i], channel: i + 1, index: i };
+}
+
+function mostrarEstado({ state, conectores = [], chat } = {}) {
+  if (chat) mandy?.sincronizar?.(chat);
   if (!state) return;
   estadoTV = state;
   body.dataset.tv = !state.power ? "apagada" : state.muted ? "silencio" : "sonando";
+  const meta = canalMeta(state.channel);
   $("estado-principal").textContent = !state.power
     ? "⏻ Apagada"
     : state.muted
@@ -104,10 +137,11 @@ function mostrarEstado({ state, conectores = [] }) {
       : `🔊 Volumen ${state.volume}`;
   const caidos = conectores.filter((c) => !c.ok);
   $("estado-detalle").textContent = [
-    `Canal ${state.channel}`,
+    `CH ${meta.channel} · ${meta.name}`,
     ...caidos.map((c) => `⚠ ${c.nombre}: ${c.detalle}`),
   ].join(" · ");
   marcarActivos();
+  marcarCanalGuia(meta.channel);
 }
 
 function marcarActivos() {
@@ -317,7 +351,7 @@ function listarAparatos(conectores = []) {
   }
 }
 
-async function conectar(valor, { desdeOnboarding = true } = {}) {
+async function conectar(valor, { desdeOnboarding = true, rapido = false } = {}) {
   $("error-codigo").textContent = "";
   try {
     const datos = await post("/api/entrar", { codigo: valor });
@@ -326,8 +360,9 @@ async function conectar(valor, { desdeOnboarding = true } = {}) {
     listarAparatos(datos.conectores);
     mostrarEstado(datos);
     escuchar();
-    if (desdeOnboarding) irPaso(4);
-    else abrirMando();
+    // Desde el QR / pitch: derecho a Mandy + mando, sin el tour largo.
+    if (rapido || !desdeOnboarding) abrirMando({ guia: false });
+    else irPaso(4);
   } catch (error) {
     irPaso(3);
     $("error-codigo").textContent = error.status === 403
@@ -341,12 +376,105 @@ $("form-codigo").addEventListener("submit", (e) => {
   conectar($("codigo").value.trim());
 });
 
+let asistenteListo = false;
+/** @type {{ sincronizar?: (chat: unknown) => void } | null} */
+let mandy = null;
+let guiaCanalesLista = false;
+let generoGuia = "todos";
+
+function marcarCanalGuia(channel) {
+  const lista = $("guia-lista");
+  if (!lista) return;
+  for (const btn of lista.querySelectorAll(".guia-canal")) {
+    btn.classList.toggle("is-on", Number(btn.dataset.ch) === Number(channel));
+  }
+}
+
+function dibujarGuiaCanales() {
+  const chips = $("guia-chips");
+  const lista = $("guia-lista");
+  if (!chips || !lista) return;
+
+  const generos = [
+    { id: "todos", nombre: "Todos" },
+    ...guiaPorGenero().map((g) => ({
+      id: g.id,
+      nombre: g.nombre.replace(/^Radio /, ""),
+    })),
+  ];
+
+  chips.replaceChildren();
+  for (const g of generos) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "guia-chip" + (g.id === generoGuia ? " is-on" : "");
+    btn.textContent = g.nombre;
+    btn.addEventListener("click", () => {
+      generoGuia = g.id;
+      dibujarGuiaCanales();
+      if (estadoTV) marcarCanalGuia(canalMeta(estadoTV.channel).channel);
+    });
+    chips.append(btn);
+  }
+
+  const items = CHANNELS.map((c, index) => ({ ...c, channel: index + 1 })).filter(
+    (c) => generoGuia === "todos" || c.genero === generoGuia,
+  );
+
+  lista.replaceChildren();
+  for (const c of items) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "guia-canal";
+    btn.dataset.ch = String(c.channel);
+    const badge = c.live ? "EN VIVO" : c.hablada ? "HABLA" : "";
+    btn.innerHTML = `
+      <span class="guia-canal__ch">${String(c.channel).padStart(2, "0")}</span>
+      <span class="guia-canal__meta">
+        <strong>${c.name}</strong>
+        <span>${badge ? `${badge} · ` : ""}${c.tagline}</span>
+      </span>
+    `;
+    btn.addEventListener("click", () => enviar(`CH_SET:${c.channel}`));
+    lista.append(btn);
+  }
+
+  if (estadoTV) marcarCanalGuia(canalMeta(estadoTV.channel).channel);
+}
+
 function abrirMando({ editar = false, guia = false } = {}) {
   guardado.escribir(CLAVE_ONBOARDING, "hecho");
   $("onb").hidden = true;
   $("app").hidden = false;
   modo = editar ? "editar" : "usar";
   render();
+  if (!guiaCanalesLista) {
+    guiaCanalesLista = true;
+    dibujarGuiaCanales();
+  }
+  if (!asistenteListo && $("asistente")) {
+    asistenteListo = true;
+    let calladoPorMic = false;
+    mandy = mountAsistente({
+      root: $("asistente"),
+      origen: "celular",
+      getCodigo: () => codigo,
+      enviar: (accion) => enviar(accion),
+      onMicInicio: async () => {
+        // Callá la TV del proyector para que el mic no se coma el canal.
+        if (estadoTV && !estadoTV.muted) {
+          calladoPorMic = true;
+          await enviar("MUTE");
+        }
+      },
+      onMicFin: async () => {
+        if (calladoPorMic) {
+          calladoPorMic = false;
+          if (estadoTV?.muted) await enviar("MUTE");
+        }
+      },
+    });
+  }
   if (guia) setTimeout(iniciarGuia, 200);
 }
 
@@ -364,6 +492,14 @@ function volverAlCodigo(motivo) {
 
 const GUIA = [
   { objetivo: "estado", texto: "Acá ves la TV en vivo: volumen, silencio y canal." },
+  {
+    objetivo: "mandy",
+    texto: "Mandy es tu asistente: pedile «una charla» o «radio jazz» y mueve la TV igual que el mando.",
+  },
+  {
+    objetivo: "canales",
+    texto: "Guía de canales: filtrá por género y tocá uno para cambiar la TV.",
+  },
   { objetivo: "modo", texto: "Usar para controlar. Editar para armar el mando a tu manera." },
   {
     objetivo: "favoritos",
@@ -417,13 +553,16 @@ $("ver-tour").addEventListener("click", iniciarGuia);
 
 // ---------- Arranque ----------
 
-const codigoInicial = new URLSearchParams(location.search).get("c") || guardado.leer(CLAVE_CODIGO, sessionStorage);
+const params = new URLSearchParams(location.search);
+const desdeQr = Boolean(params.get("c"));
+const codigoInicial = params.get("c") || guardado.leer(CLAVE_CODIGO, sessionStorage);
 if (codigoInicial) $("codigo").value = codigoInicial;
 
-if (guardado.leer(CLAVE_ONBOARDING) === "hecho" && codigoInicial) {
-  conectar(codigoInicial, { desdeOnboarding: false });
+if (codigoInicial && (desdeQr || guardado.leer(CLAVE_ONBOARDING) === "hecho")) {
+  // QR o ya conocés el flujo → conectá y mostrá Mandy + mando.
+  conectar(codigoInicial, { desdeOnboarding: false, rapido: desdeQr });
 } else if (guardado.leer(CLAVE_ONBOARDING) === "hecho") {
   irPaso(3);
 } else {
-  irPaso(1);
+  irPaso(desdeQr ? 3 : 1);
 }

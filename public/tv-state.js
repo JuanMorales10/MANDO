@@ -3,7 +3,7 @@
 
 export const initialState = Object.freeze({
   power: true,
-  volume: 15,
+  volume: 55,
   muted: false,
   channel: 1,
 });
@@ -20,6 +20,19 @@ const wrapChannel = (c) =>
 
 export function applyAction(state, action) {
   if (action === "POWER") return { ...state, power: !state.power };
+
+  // Salto directo de canal (asistente de voz / mini IA), aunque la TV esté "apagada"
+  // la dejamos encendida para que el pedido se vea.
+  if (typeof action === "string" && action.startsWith("CH_SET:")) {
+    const n = Number(action.slice(7));
+    if (!Number.isFinite(n)) return state;
+    return {
+      ...state,
+      power: true,
+      channel: wrapChannel(Math.round(n)),
+    };
+  }
+
   if (!state.power) return state;
 
   switch (action) {

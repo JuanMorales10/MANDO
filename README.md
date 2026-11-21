@@ -2,14 +2,21 @@
 
 **Tu control, a tu manera.**
 
-**Demo:** https://mando-one.vercel.app · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
+**Demo:** https://mando-guia-ai.vercel.app (preview) · https://mando-one.vercel.app (prod)
 
-**Celular + QR (misma WiFi):**
+**Flujo único**
+1. Notebook → `/` → TV + QR  
+2. Celular escanea → `/celular` → **Mandy** + mando  
+3. `/ai` y `/proyector` redirigen a `/`
+
+IA Commit Academy si hay `OPENAI_API_KEY`; si no, match local del catálogo.
+
+**Local (misma WiFi / puntero Mac):**
 ```sh
 npm run sala                 # TV + mando por QR
 npm run sala:puntero         # lo mismo + puntero del teléfono → cursor Mac
+npm start                    # demo de una página en /demo.html
 ```
-Proyector: `http://localhost:8080/proyector.html` · escaneá el QR con el celular.
 
 Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo de una sola página sigue en Vercel; el QR necesita la notebook en la misma red.
 

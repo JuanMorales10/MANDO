@@ -50,7 +50,7 @@ test("MUTE desde el celular silencia y avisa al conector", async () => {
 
 test("VOL_UP aplica el paso configurado y respeta el tope", async () => {
   const res = await accion({ codigo: "1234", accion: "VOL_UP" });
-  assert.equal((await res.json()).state.volume, 20);
+  assert.equal((await res.json()).state.volume, 60);
   for (let i = 0; i < 30; i += 1) await accion({ codigo: "1234", accion: "VOL_UP" });
   assert.equal(app.sala.state.volume, 100);
 });

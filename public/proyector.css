@@ -28,6 +28,32 @@
 
 .pro__tv { min-width: 0; }
 
+.pro__tv .mando-tv {
+  width: 100%;
+  max-width: none;
+}
+
+.pro__tv .mando-tv__pantalla {
+  min-height: min(62vh, 720px);
+  padding: 1.2cqi 1.5cqi;
+}
+
+.pro__tv .mando-tv__yt,
+.pro__tv .mando-tv__player iframe {
+  transform: scale(1.5);
+}
+
+.pro__mandy-hint {
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
+  opacity: 0.8;
+  line-height: 1.35;
+}
+
+.pro__mandy-hint strong {
+  color: var(--lima, #ff6a3d);
+}
+
 .pro__lado { display: grid; gap: 3vh; align-content: center; }
 .pro__lado h2 { margin: 0 0 1vh; font-size: clamp(1.1rem, 1.6vw, 1.8rem); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
 
@@ -93,3 +119,11 @@
 @media (max-aspect-ratio: 1/1) {
   .pro__escena { grid-template-columns: 1fr; }
 }
+
+.pro__mandy-hint {
+  margin: 1.5vh 0 0;
+  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
+  line-height: 1.35;
+  opacity: 0.85;
+}
+.pro__mandy-hint strong { color: var(--lima, #FF6A3D); }

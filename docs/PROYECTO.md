@@ -3,7 +3,10 @@
 **MANDO** es un mando configurable en el navegador: movés y agrandás tus botones, y controlás una TV simulada (y, en el modo extendido, notebook/proyector reales).
 
 **Tagline:** *Tu control, a tu manera.*  
-**Demo en vivo:** https://mando-one.vercel.app
+**Preview (TV + Mandy):** https://mando-guia-ai.vercel.app  
+**Prod:** https://mando-one.vercel.app  
+
+Home `/` = TV + QR. Celular `/celular` = Mandy + mando.
 
 ## Quick path
 
@@ -19,7 +22,9 @@
 | UX mobile-first | En `main` | `public/index.html`, `demo.css`, `identidad.css` |
 | Demo estática | En producción | https://mando-one.vercel.app |
 | Motor de estado | Integrado en demo de canales | `public/tv-state.js` |
-| TV + canales de video | Demo interactiva | `public/tv.js` / `tv.css` — 4 clips HTML5 |
+| TV + canales YouTube | Demo interactiva | `public/catalogo.js` + `tv.js` — radios EN VIVO + cine |
+| Home TV + QR | `/` | `index.html` + `ai.js` / `ai.css` |
+| Mandy + mando | `/celular` | `celular.js` + `asistente.js` + `/api/asistente` |
 | Celular + proyector real | PR abierto | [#9](https://github.com/JuanMorales10/MANDO/pull/9) · `server/` + HTML celular |
 
 ## Arquitectura (contrato)
@@ -53,17 +58,21 @@ Layout del mando: `localStorage` clave `mando-layout-v1`.
 - Deploy: Vercel (`vercel.json` → `outputDirectory: public`).
 - Modo celular (PR #9): Node en memoria + conectores notebook / PJLink.
 
-## Cómo correr en local
+## Cómo correr
+
+**En Vercel:** abrí la home → escaneá el QR → controlá desde el celular.
+
+**En local:**
 
 ```sh
 git clone https://github.com/JuanMorales10/MANDO.git
 cd MANDO
-npm start          # demo de una página (como Vercel)
-npm run sala       # proyector + QR + celular (misma WiFi)
+npm run sala          # proyector + QR + celular (LAN)
 npm run sala:puntero  # sala + puntero del teléfono → cursor Mac
+npm start             # solo estáticos (/demo)
 ```
 
-1. Notebook: `http://localhost:8080/proyector.html`
+1. Notebook: `http://localhost:8080/` o `/proyector.html`
 2. Escaneá el QR con el celular
 3. El mando del teléfono controla la TV (y con `sala:puntero`, también el cursor)
 

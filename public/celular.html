@@ -14,9 +14,10 @@
 
     <article class="onb__paso" data-paso="1">
       <div class="onb__marca">MANDO</div>
-      <h1>El control que se adapta a vos.</h1>
-      <p>Controlá la tele, el proyector o la compu desde tu celular, con los botones que vos elijas.</p>
-      <button class="btn-primario" data-ir="2">Empezar</button>
+      <h1>Tu mando + Mandy</h1>
+      <p>Desde el celular controlás la TV con botones o pedile a <strong>Mandy</strong> qué poner.</p>
+      <button class="btn-primario" data-ir="3">Conectar</button>
+      <button class="btn-texto" data-ir="2">Más info</button>
     </article>
 
     <article class="onb__paso" data-paso="2" hidden>
@@ -29,11 +30,11 @@
 
     <article class="onb__paso" data-paso="3" hidden>
       <div class="onb__icono" aria-hidden="true">🔑</div>
-      <h1>Conectá tu cuenta</h1>
-      <p>Escribí el código de 4 números que aparece en la pantalla del proyector.</p>
+      <h1>Código del proyector</h1>
+      <p>Si viniste por el QR, ya está. Si no, escribí los 4 números de la pantalla.</p>
       <form id="form-codigo" autocomplete="off">
         <input id="codigo" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" aria-label="Código de 4 números" required />
-        <button class="btn-primario" type="submit">Conectar</button>
+        <button class="btn-primario" type="submit">Entrar con Mandy</button>
       </form>
       <p class="onb__error" id="error-codigo" role="alert"></p>
     </article>
@@ -65,6 +66,18 @@
     <section class="estado" id="estado" data-tour="estado" role="status" aria-live="polite">
       <span class="estado__principal" id="estado-principal">—</span>
       <span class="estado__detalle" id="estado-detalle"></span>
+    </section>
+
+    <!-- Mandy manda las mismas acciones que los botones del mando -->
+    <div id="asistente" class="mandy-host" data-tour="mandy"></div>
+
+    <section class="guia-canales" data-tour="canales" aria-label="Guía de canales">
+      <header class="guia-canales__cab">
+        <h2>Guía</h2>
+        <p>Elegí un canal o pedíselo a Mandy</p>
+      </header>
+      <nav class="guia-canales__chips" id="guia-chips" aria-label="Géneros"></nav>
+      <div class="guia-canales__lista" id="guia-lista"></div>
     </section>
 
     <div class="modos" data-tour="modo" role="group" aria-label="Modo del mando">
