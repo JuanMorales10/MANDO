@@ -116,8 +116,8 @@ async function refrescarPuntero() {
       if (info?.puntero) {
         bloque.dataset.listo = "1";
         texto.textContent = "Listo en esta compu · abrí desde el celu o acá";
-        if (typeof info.url === "string" && info.url) link.href = info.url;
-        else link.href = `/puntero/index.html${codigoQ}`;
+        // info.url es el celular; el puntero vive en /puntero/
+        link.href = `/puntero/index.html${codigoQ}`;
         return;
       }
     }
