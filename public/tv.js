@@ -30,7 +30,6 @@ const PLANTILLA = `
   <div class="mando-tv__pantalla">
     <header class="mando-tv__barra">
       <span class="mando-tv__titulo">TV SIMULADA</span>
-      <span class="mando-tv__canal">Canal <b data-tv="canal"></b></span>
     </header>
 
     <div class="mando-tv__centro mando-tv__centro--volumen">
@@ -58,12 +57,10 @@ const PLANTILLA = `
 function normalizar(state) {
   const s = { ...ESTADO_BASE, ...(state || {}) };
   const volumen = Number(s.volume);
-  const canal = Number(s.channel);
   return {
     power: s.power !== false,
     muted: s.muted === true,
-    volume: Number.isFinite(volumen) ? Math.min(100, Math.max(0, Math.round(volumen))) : 0,
-    channel: Number.isFinite(canal) ? canal : 1,
+    volume: !Number.isNaN(volumen) ? Math.min(100, Math.max(0, Math.round(volumen))) : 0,
   };
 }
 
@@ -82,6 +79,10 @@ export function renderTV(el, state) {
     tv = el.querySelector(":scope > .mando-tv");
   }
 
+  // El elemento anfitrión ocupa todo el ancho disponible. Sin esto, dentro de
+  // un contenedor flex centrado se encoge a 0 y la TV no se ve.
+  el.classList.add("mando-tv-anfitrion");
+
   const s = normalizar(state);
   const poner = (clave, texto) => {
     const nodo = tv.querySelector(`[data-tv="${clave}"]`);
@@ -91,7 +92,6 @@ export function renderTV(el, state) {
   tv.dataset.encendida = s.power ? "si" : "no";
   tv.dataset.silencio = s.muted ? "si" : "no";
 
-  poner("canal", s.channel);
   poner("volumen", s.volume);
   poner("volumen-guardado", s.volume);
   poner("lector", describir(s));

@@ -2,12 +2,22 @@
    Los tamaños usan cqi (ancho del contenedor) para que la pantalla
    se lea igual en media página que en pantalla completa. */
 
+/* Elemento donde se monta la TV: renderTV le pone esta clase. */
+.mando-tv-anfitrion {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  align-self: stretch;
+}
+
 .mando-tv {
   --tv-fondo: var(--azul-noche, #101522);
   --tv-texto: var(--marfil, #F5F4EE);
   --tv-acento: var(--lima, #C9F76A);
   --tv-marco: #05070d;
-  --tv-suave: rgba(245, 244, 238, 0.62);
+  --tv-suave: rgba(245, 244, 238, 0.78);
+  /* Piso de 20 px para todo texto; solo se suelta en pantallas diminutas (< 320 px). */
+  --tv-piso: 20px;
 
   container-type: inline-size;
   box-sizing: border-box;
@@ -51,14 +61,20 @@
   box-shadow: 0 0 0 0.250cqi rgba(245, 244, 238, 0.18);
 }
 
+@container (max-width: 320px) {
+  .mando-tv__pantalla {
+    --tv-piso: 0px;
+  }
+}
+
 /* Barra superior */
 
 .mando-tv__barra {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 2cqi;
-  font-size: 2.600cqi;
+  font-size: max(var(--tv-piso), 2.600cqi);
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -68,15 +84,6 @@
   border: 0.300cqi solid var(--tv-acento);
   border-radius: 1cqi;
   color: var(--tv-acento);
-}
-
-.mando-tv__canal {
-  color: var(--tv-suave);
-  letter-spacing: 0.06em;
-}
-
-.mando-tv__canal b {
-  color: var(--tv-texto);
 }
 
 /* Zona central: se muestra una sola de las tres vistas */
@@ -109,14 +116,14 @@
   display: flex;
   align-items: center;
   gap: 0.500em;
-  font-size: 4cqi;
+  font-size: max(var(--tv-piso), 4cqi);
   font-weight: 800;
   letter-spacing: 0.16em;
   color: var(--tv-acento);
 }
 
 .mando-tv__numero {
-  font-size: 27cqi;
+  font-size: 28cqi;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -141,7 +148,7 @@
 }
 
 .mando-tv__guardado {
-  font-size: 3.600cqi;
+  font-size: max(var(--tv-piso), 4.400cqi);
   font-weight: 700;
   color: var(--tv-suave);
 }
@@ -164,7 +171,6 @@
   background: var(--tv-marco);
 }
 
-.mando-tv[data-encendida="no"] .mando-tv__canal,
 .mando-tv[data-encendida="no"] .mando-tv__medidor {
   visibility: hidden;
 }
