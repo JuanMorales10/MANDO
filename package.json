@@ -6,5 +6,11 @@
     "start": "npx --yes serve public",
     "sala": "node server/server.mjs",
     "sala:puntero": "node server/con-puntero.mjs"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.94",
+    "@vercel/functions": "^3.11.3",
+    "ai": "^7.0.179",
+    "zod": "^4.6.7"
   }
 }

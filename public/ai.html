@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0C0C10" />
+  <title>MANDO · AI · Mandy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./tv.css" />
+  <link rel="stylesheet" href="./ai.css" />
+</head>
+<body class="ai-page">
+  <main class="sala">
+    <section class="sala__tv" aria-label="TV">
+      <div id="tv"></div>
+      <p class="sala__ahora" id="ahora" role="status">Tocá la TV para activar el sonido</p>
+    </section>
+
+    <aside class="sala__lado">
+      <p class="sala__marca">MANDO</p>
+      <p class="sala__tag">TV + Mandy en vivo</p>
+
+      <section class="sala__qr" id="unirse" hidden>
+        <div class="sala__qr-row">
+          <img
+            id="qr"
+            class="sala__qr-img"
+            alt="QR para conectar el celular"
+            width="160"
+            height="160"
+            hidden
+          />
+          <div class="sala__qr-meta">
+            <h1>Escaneá</h1>
+            <p class="sala__hint">Mando + Mandy en el celu</p>
+            <p class="sala__codigo-label">Código</p>
+            <p class="sala__codigo" id="codigo">····</p>
+            <a class="sala__link-cel" id="link-cel" href="/celular">Abrir mando →</a>
+          </div>
+        </div>
+        <p class="sala__url" id="url"></p>
+      </section>
+
+      <div id="asistente" class="mandy-host mandy-host--sala"></div>
+
+      <p class="sala__aviso" id="aviso" role="status" aria-live="polite"></p>
+    </aside>
+  </main>
+
+  <script type="module" src="./ai.js"></script>
+</body>
+</html>

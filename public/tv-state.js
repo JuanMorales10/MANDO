@@ -33,7 +33,14 @@ export function applyAction(state, action) {
       return { ...state, channel: wrapChannel(state.channel + 1) };
     case "CH_DOWN":
       return { ...state, channel: wrapChannel(state.channel - 1) };
-    default:
+    default: {
+      // Salto directo de canal (Mandy / guía), aunque la TV esté "apagada"
+      if (typeof action === "string" && action.startsWith("CH_SET:")) {
+        const n = Number(action.slice(7));
+        if (!Number.isInteger(n) || n < CHANNEL_MIN || n > CHANNEL_MAX) return state;
+        return { ...state, power: true, channel: n };
+      }
       return state;
+    }
   }
 }

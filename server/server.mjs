@@ -117,7 +117,10 @@ export function crearServidor({ codigo, conectores = [], pasoVolumen = 1, log = 
           return json(res, 400, { error: "JSON inválido" });
         }
         if (String(datos?.codigo) !== sala.codigo) return json(res, 403, { error: "Código incorrecto" });
-        if (!ACCIONES.includes(datos?.accion)) return json(res, 400, { error: "Acción desconocida" });
+        const accionOk =
+          ACCIONES.includes(datos?.accion) ||
+          (typeof datos?.accion === "string" && /^CH_SET:\d{1,3}$/.test(datos.accion));
+        if (!accionOk) return json(res, 400, { error: "Acción desconocida" });
         const origen = esLocal(req) ? "notebook" : "celular";
         log(`${origen}: ${datos.accion}`);
         const state = await ejecutar(datos.accion, origen);

@@ -2,7 +2,7 @@
 
 **Tu control, a tu manera.**
 
-**App:** https://mando-psi.vercel.app — todo funciona desde esta dirección (se publica sola con cada cambio en `main`) · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
+**App:** https://mando-psi.vercel.app — todo funciona desde esta dirección (se publica sola con cada cambio en `main`) · **Mandy / AI:** https://mando-psi.vercel.app/ai · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
 
 **Cómo se usa (todo desde la app publicada):**
 1. En la compu del proyector o la tele: abrí https://mando-psi.vercel.app → **«Esta pantalla es la tele»**. Muestra un QR y un código.
