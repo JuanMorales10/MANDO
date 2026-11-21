@@ -9,8 +9,9 @@ Priorizado para no romper el pitch: primero cerrar el recorrido del jurado, desp
 | Mando Editar / Usar | En `main` |
 | Mover y redimensionar Silencio | `localStorage` `mando-layout-v1` |
 | Demo mobile-first | https://mando-one.vercel.app |
-| Motor `applyAction` | Mergear [#6](https://github.com/JuanMorales10/MANDO/pull/6) |
-| TV `renderTV` | Mergear [#7](https://github.com/JuanMorales10/MANDO/pull/7) |
+| Motor `applyAction` | En rama `feat/tv-channels` (+ tests) |
+| TV `renderTV` + **canales de video** | 4 clips HTML5; MUTE/VOL/CH/POWER en vivo |
+| POWER / Canal +/− en el mando | Integrado en la demo |
 | Celular + notebook + PJLink | Mergear [#9](https://github.com/JuanMorales10/MANDO/pull/9) |
 
 ## Quick path (próximos merges)
