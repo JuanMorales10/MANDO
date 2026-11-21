@@ -1,55 +1,76 @@
-# MANDO
+# MANDO · Plan para 4 computadoras · Prototipo en 90 minutos
 
 **Tu control, a tu manera.**
 
-## Qué vamos a mostrar
+Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo tiene que funcionar en una sola página y en una sola notebook, sin depender del celular, un QR ni la red entre máquinas.
 
-Desde el celular, cada persona configura su mando y lo usa para controlar una TV simulada. La demo local reúne el mando y la TV en una sola pantalla y funciona en un solo equipo. La conexión entre dos dispositivos es un segundo modo de uso.
+## Quién hace qué
 
-## Acuerdos de implementación
+| Compu | Responsable | Correo | Rama | Entrega |
+| --- | --- | --- | --- | --- |
+| 1 | Juan «Juanse» Aguirre · @aguirrejuanse | Juanseagui@gmail.com | `feat/mando` | [Mando y editor · #1](https://github.com/JuanMorales10/MANDO/issues/1) |
+| 2 | Juan Morales · @JuanMorales10 | juanmoralesp19@gmail.com | `feat/motor` | [Motor y pruebas · #2](https://github.com/JuanMorales10/MANDO/issues/2) |
+| 3 | Santiago · @sponte77 | Sponte77@gmail.com | `feat/tv` | [TV y visual de proyector](#compu-3--santiago--tv-y-visual-de-proyector) |
+| 4 | Nicolás «Nico» Faingold · @nicofaingold066-sketch | nicofaingold066@gmail.com | `feat/demo` | [Integración, GitHub y pitch · #3](https://github.com/JuanMorales10/MANDO/issues/3) |
 
-- La interfaz vive en `public/` y usa HTML, CSS y JavaScript sin framework.
-- El navegador guarda el diseño del mando. Node se usa únicamente para conectar dispositivos y mantiene el estado de cada sala en memoria. El proyecto funciona sin base de datos.
-- En la demo local, cada acción actualiza el estado en el navegador y vuelve a dibujar la TV.
-- La paleta usa azul noche `#101522` de fondo, marfil `#F5F4EE` para el texto y lima `#C9F76A` para destacar controles. Usamos etiquetas claras y tipografía grande para proyectar.
+## Acuerdos antes de arrancar
 
-## Contrato compartido
+Un solo repo de GitHub. Todos parten del mismo `main`. Cada compu abre su rama y toca únicamente sus archivos. Si ya existe una rama con trabajo, se conserva. **Solo la compu 4 integra en `main`.**
 
-| Función | Responsabilidad |
-| --- | --- |
-| `mountRemote(el, dispatch)` | Monta el mando en el elemento recibido. Al pulsar un botón, llama a `dispatch` con el nombre de la acción, por ejemplo `dispatch("VOL_UP")`. |
-| `renderTV(el, state)` | Dibuja la TV en el elemento recibido con el estado actual. Se llama al iniciar y después de cada cambio. |
+HTML, CSS y JS, sin framework ni base de datos. Identidad **MANDO · Tu control, a tu manera**. Azul noche `#101522`, marfil `#F5F4EE` y lima `#C9F76A`. Usen botones con texto e ícono, contraste alto y letra grande para proyectar.
 
-Estado inicial de la demo y de cada sala nueva
-
-```js
-{ power: true, volume: 15, muted: false, channel: 1 }
-```
-
-| Control | Acciones |
-| --- | --- |
-| Volumen | `VOL_UP`, `VOL_DOWN` |
-| Silencio | `MUTE` |
-| Canal | `CH_UP`, `CH_DOWN` |
-| Encendido | `POWER` |
-
-Cualquier cambio de nombres se acuerda entre las tres compus antes de implementarlo.
-
-## Cómo arrancar en Cursor
-
-Cada compu clona el mismo repo y abre la carpeta `MANDO` en Cursor.
+Si todavía no tienen el repo en su compu, clónenlo y abran esa carpeta en Cursor.
 
 ```sh
 git clone https://github.com/JuanMorales10/MANDO.git
 cd MANDO
 ```
 
-Desde el mismo primer commit de `main`, cada compu crea su rama. Nombres sugeridos para dividir el trabajo
+## Compu 1 · Juanse · Mando y editor
 
-| Compu | Trabajo | Comando |
-| --- | --- | --- |
-| 1 | Mando configurable | `git switch -c feat/mando` |
-| 2 | Pantalla de TV simulada | `git switch -c feat/tv` |
-| 3 | Integración de la demo local y conexión entre equipos | `git switch -c feat/integracion` |
+**Rama** `feat/mando` · **Archivos** `public/remote.js` y `public/remote.css`.
 
-Después de hacer un commit en su rama, cada compu la publica con `git push -u origin HEAD`.
+- Exportá `mountRemote(el, dispatch)`. El mando no conoce la TV, no calcula el volumen y no llama a ninguna API.
+- Primero armá los modos **Editar / Usar** y los botones Silencio y Volumen +/−. En Usar emiten `MUTE`, `VOL_UP` y `VOL_DOWN`. En Editar, nunca emiten acciones.
+- Hacé que «Silencio» se mueva con mouse y dedo. Si arrastrar complica, permití seleccionar el botón y tocar su casilla destino. Después agregá dos tamaños y guardá posiciones y tamaños en `localStorage` con la clave `mando-layout-v1`. Usá clases con prefijo `.mando-remote`.
+- Probá con un `dispatch` provisorio que mover no emite nada, usar emite una sola acción y recargar conserva el diseño. Abrí PR apenas funcione mover y usar «Silencio», aunque falte el pulido.
+
+## Compu 2 · Juan · Motor y pruebas
+
+**Rama** `feat/motor` · **Archivos** `public/tv-state.js` y `tests/tv-state.test.mjs`.
+
+- Exportá `initialState = { power: true, volume: 15, muted: false, channel: 1 }` y `applyAction(state, action)`.
+- `MUTE` alterna silencio sin cambiar el volumen guardado. `VOL_UP` y `VOL_DOWN` cambian el volumen de a 1, de 0 a 100. Una acción desconocida no cambia nada. No modifiques el estado original.
+- Subí `MUTE` primero. Después probá dos pulsaciones para volver al estado inicial, volumen preservado, ambos topes, acción desconocida y que no se modifica el objeto original. Corré `node --test tests/tv-state.test.mjs`. Pasale a Nico los nombres de los dos exports y el resultado. Nada de servidor ni base de datos para la entrega inicial.
+
+## Compu 3 · Santiago · TV y visual de proyector
+
+**Rama** `feat/tv` · **Archivos** `public/tv.js` y `public/tv.css`.
+
+- Exportá `renderTV(el, state)`. Trabajá con dos estados de ejemplo, normal y silenciado, sin esperar a las otras compus.
+- Mostrá **TV SIMULADA**, volumen grande y un aviso **SILENCIO** que se lea desde el fondo. Usá texto, ícono y contraste, no solo color. Al desactivar silencio, que vuelva a verse el volumen anterior. Estilos con prefijo `.mando-tv`.
+- No pongas video, fuentes externas ni controles que todavía no funcionan. Abrí PR con la primera pantalla usable. Una vez integrada, probala en pantalla completa y avisá si algo se corta o no se lee.
+
+## Compu 4 · Nico · Integración, GitHub y pitch
+
+**Rama** `feat/demo` · **Archivos** `public/index.html`, `public/app.js`, `public/demo.css`, `package.json` y `README.md`.
+
+- Dejá en la base común `package.json` con `{ "private": true, "type": "module" }` si todavía no existe. Armá la pantalla dividida con un botón y un indicador provisorios mientras llegan los módulos.
+- Integrá **motor → mando → TV** y después tu pantalla. En `app.js` guardá el estado y conectá **`mountRemote` → `dispatch(action)` → `applyAction` → `renderTV`**. Importá las tres hojas de estilo y sacá los elementos provisorios. Al abrir, dibujá la TV con `initialState`.
+- Publicá `public/` como la demo estática. Verificá en incógnito y desde otra compu que el enlace abre sin sesión. Probá **Editar → mover y agrandar Silencio → Usar → tocar el botón reubicado → TV silenciada**. Documentá cómo abrirla localmente y poné el enlace en este README. La demo publicada funciona sin una sala ni la red del evento.
+
+## Reloj común
+
+| Minuto | Hito |
+| --- | --- |
+| 0–5 | Nico pasa el repo y los contratos. Todos abren su rama. Cursor construye y cada persona edita sus archivos. |
+| 25 | Cada compu sube su bloque y abre PR a `main`. Nico integra. Si hay conflicto, lo resuelve con el dueño del archivo. |
+| 45 | Hagan el recorrido completo de «Silencio» en la notebook. Guarden ese commit como respaldo. Si funciona, ya pueden publicar. |
+| 60 | Prueben desde otro equipo, recarguen y revisen tamaño, volumen y proyector. Usen Grokbot para buscar fallas en ese recorrido. Arreglen solo lo que lo rompa. |
+| 75–90 | Congelen, ensayen y envíen **visión + repo + demo** en **Equipos**. Guardar un borrador no cuenta. **Cierre a las 15:00 de Mendoza**. Si el reloj aprieta, entreguen antes el último commit que funciona. Celu y QR quedan afuera hasta tener la entrega asegurada. |
+
+## Pitch
+
+«No tenés que adaptarte al control. El control se adapta a vos».
+
+Dale el mouse a alguien del jurado para que mueva su botón y lo use. El cambio en la TV es la prueba.
