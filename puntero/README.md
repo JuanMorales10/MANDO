@@ -21,6 +21,7 @@ Se abre sola una pantalla con un **QR grande** (también sale en la terminal).
 ## Qué podés hacer desde el teléfono
 
 - **Puntero:** mover el teléfono mueve el cursor. Tocar la zona grande = clic. Arrastrar el dedo también mueve.
+  Mientras el teléfono está conectado, en la Mac el cursor se ve grande y con un halo, para seguirlo desde lejos.
   Dos dedos = desplazar la página. Toque con dos dedos = clic derecho. «Centrar» lleva el cursor al medio.
 - **Mando:** el mando de MANDO; volumen y silencio cambian el volumen real de la Mac.
 - **Diapositivas:** Anterior, Siguiente, Espacio, Enter y Esc.
@@ -57,6 +58,7 @@ Muchas Wi-Fi de eventos no dejan que los equipos se vean entre sí.
 
 - `PUERTO=8444 npm start`: elegir el puerto (por defecto 8443; si está ocupado prueba el siguiente).
 - `SIN_PANTALLA=1 npm start`: no abrir la pantalla del QR ni el cartel de permiso.
+- `CURSOR_GRANDE=0 npm start`: no mostrar el cursor grande (flecha con halo) mientras hay un teléfono conectado.
 - `PRUEBA=1 npm start`: además sirve la página del teléfono por HTTP solo en esta compu, para probar sin certificado.
 
 ## Cómo está hecho
