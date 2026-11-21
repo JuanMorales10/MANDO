@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#07080d" />
+    <meta
+      name="description"
+      content="MANDO — Tu control, a tu manera. Configurá el mando y controlá canales de video."
+    />
+    <title>MANDO · Tu control, a tu manera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://interactive-examples.mdn.mozilla.net" />
+    <link rel="preconnect" href="https://samplelib.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./identidad.css" />
+    <link rel="stylesheet" href="./tv.css" />
+    <link rel="stylesheet" href="./remote.css" />
+    <link rel="stylesheet" href="./demo.css" />
+  </head>
+  <body>
+    <a class="mando-skip" href="#remote-root">Ir al mando</a>
+
+    <div class="mando-demo">
+      <header class="mando-demo__brand">
+        <p class="mando-demo__wordmark">MANDO</p>
+        <p class="mando-demo__tagline">Tu control, a tu manera</p>
+      </header>
+
+      <section class="mando-demo__stage" aria-label="TV simulada">
+        <div id="tv-root"></div>
+        <p class="mando-demo__coach">
+          Usá Canal +/− para cambiar de video. Editar → mové Silencio → Usar →
+          tocá.
+        </p>
+      </section>
+
+      <section class="mando-demo__remote" aria-label="Mando">
+        <div id="remote-root"></div>
+      </section>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -2,16 +2,16 @@
 
 **Tu control, a tu manera.**
 
-**Demo:** https://mando-psi.vercel.app (se publica sola con cada cambio en `main`) · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
+**App:** https://mando-psi.vercel.app — todo funciona desde esta dirección (se publica sola con cada cambio en `main`) · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
 
-**Celular + QR (misma WiFi), en la notebook del proyector:**
+**Cómo se usa (todo desde la app publicada):**
+1. En la compu del proyector o la tele: abrí https://mando-psi.vercel.app → **«Esta pantalla es la tele»**. Muestra un QR y un código.
+2. Con el celular: escaneá el QR (o entrá a la app → **«Mi mando»** y escribí el código). Funciona desde cualquier red, sin instalar nada.
+3. **Para controlar la compu de verdad** (volumen, Netflix/YouTube, teclas): en esa compu, doble clic en **`MANDO.command`**. Abre la pantalla publicada en la misma sala y los botones actúan en la compu. No hace falta tener Node.
 
-- **Doble clic en `MANDO.command`** — arranca todo (mando, TV, puntero) y abre el proyector con el QR. No hace falta tener Node: usa el de Cursor o VS Code.
-- O por terminal:
-```sh
-npm run sala                 # TV + mando por QR · proyector en http://localhost:8080/proyector.html
-npm run sala:puntero         # lo mismo + puntero del teléfono · proyector en http://localhost:8090/proyector.html
-```
+El celular y la pantalla se encuentran por un puente en la nube (ntfy.sh): viajan solo los nombres de los botones dentro de una sala con código. El **puntero en el aire** necesita mismo wifi (botón «Puntero» en el mando cuando corre `MANDO.command`).
+
+Por terminal, en la red local: `npm run sala` (proyector en http://localhost:8080/proyector) o `npm run sala:puntero` (http://localhost:8090/proyector.html).
 Escaneá el QR con la cámara del celular: entra directo al mando, sin escribir nada. Antes de presentar, dale permiso de **Accesibilidad** a la app que abre MANDO (Ajustes → Privacidad y seguridad → Accesibilidad) para que funcionen el puntero y las teclas.
 
 Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo de una sola página sigue en Vercel; el QR necesita la notebook en la misma red.

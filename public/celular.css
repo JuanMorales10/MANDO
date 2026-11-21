@@ -142,24 +142,24 @@ svg { display: block; width: 100%; height: 100%; }
    Cada casilla mide 2.6ch; el texto avanza 1ch + 1.6ch de espaciado y arranca a 0.8ch. */
 #form-codigo { display: flex; flex-direction: column; gap: 18px; flex: 1; }
 #codigo {
-  align-self: flex-start;
-  width: 11.2ch;
-  max-width: 100%;
+  align-self: stretch;
+  width: 100%;
   height: 80px;
-  font: 800 2.8rem/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  letter-spacing: 1.6ch;
-  text-align: left;
-  padding: 0 0 0 0.8ch;
-  border: 0;
-  border-radius: 0;
+  font: 800 2.4rem/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.35em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0 0 0 0.35em;
+  border: 1.5px solid var(--m-borde);
+  border-radius: var(--m-radio);
+  background: var(--m-elevado);
   color: var(--m-texto);
   caret-color: var(--m-cian);
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 208 84' preserveAspectRatio='none'%3E%3Cg fill='%231b1e29' stroke='%232a2e3d' stroke-width='1.5'%3E%3Crect x='3' y='1' width='46' height='82' rx='16'/%3E%3Crect x='55' y='1' width='46' height='82' rx='16'/%3E%3Crect x='107' y='1' width='46' height='82' rx='16'/%3E%3Crect x='159' y='1' width='46' height='82' rx='16'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 10.4ch 100% no-repeat;
   -webkit-appearance: none;
   appearance: none;
 }
 #codigo::placeholder { color: #3a3f53; }
-#codigo:focus { outline: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 208 84' preserveAspectRatio='none'%3E%3Cg fill='%231b1e29' stroke='%236c5cff' stroke-width='2'%3E%3Crect x='3' y='1' width='46' height='82' rx='16'/%3E%3Crect x='55' y='1' width='46' height='82' rx='16'/%3E%3Crect x='107' y='1' width='46' height='82' rx='16'/%3E%3Crect x='159' y='1' width='46' height='82' rx='16'/%3E%3C/g%3E%3C/svg%3E"); }
+#codigo:focus { outline: none; border-color: var(--m-primario); box-shadow: 0 0 0 4px rgba(108, 92, 255, 0.2); }
 #form-codigo .btn-primario { margin-top: auto; }
 
 .onb__aparatos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }

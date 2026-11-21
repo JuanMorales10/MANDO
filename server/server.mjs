@@ -199,9 +199,10 @@ async function servirArchivo(pathname, res) {
     return json(res, 404, { error: "No encontrado" });
   }
   try {
-    const contenido = await readFile(ruta);
+    // Direcciones cortas como en Vercel: /celular → celular.html
+    const contenido = await readFile(ruta).catch((error) => (extname(ruta) ? Promise.reject(error) : readFile(`${ruta}.html`)));
     res.writeHead(200, {
-      "content-type": TIPOS[extname(ruta)] || "application/octet-stream",
+      "content-type": TIPOS[extname(ruta) || ".html"] || "application/octet-stream",
       "cache-control": "no-store",
     });
     res.end(contenido);

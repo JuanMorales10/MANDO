@@ -18,9 +18,9 @@
       <div class="onb__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="5"/><circle cx="12" cy="8" r="1.6"/><path d="M10 13h4M10 16h4"/></svg></div>
       <div class="onb__marca">MANDO</div>
       <h1>Conectá tu mando</h1>
-      <p>Escribí el código de 4 números que aparece en el proyector. Tu celular tiene que estar en el mismo wifi.</p>
+      <p>Escribí el código que aparece en la pantalla de la tele o el proyector.</p>
       <form id="form-codigo" autocomplete="off">
-        <input id="codigo" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="0000" aria-label="Código de 4 números" required />
+        <input id="codigo" maxlength="6" placeholder="ABC123" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Código que aparece en la pantalla" required />
         <button class="btn-primario" type="submit">Conectar</button>
       </form>
       <p class="onb__error" id="error-codigo" role="alert"></p>
