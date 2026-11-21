@@ -32,7 +32,8 @@ function leerConfig() {
   try {
     const c = JSON.parse(guardado.leer(CLAVE_CONFIG));
     const validos = (lista) => (Array.isArray(lista) ? lista.filter((id) => BOTON[id]) : []);
-    if (c) return { favoritos: validos(c.favoritos), grandes: validos(c.grandes), ocultas: Array.isArray(c.ocultas) ? c.ocultas : [] };
+    const mapa = (m) => (m && typeof m === "object" ? Object.fromEntries(Object.entries(m).filter(([k]) => BOTON[k])) : {});
+    if (c) return { favoritos: validos(c.favoritos), grandes: validos(c.grandes), ocultas: Array.isArray(c.ocultas) ? c.ocultas : [], tamanos: mapa(c.tamanos), colores: mapa(c.colores) };
   } catch {
     // Config dañada: arrancamos de fábrica.
   }
@@ -40,7 +41,109 @@ function leerConfig() {
 }
 
 let config = leerConfig();
+
+// Tamaño y color por botón (lo que hace que el mando sea de cada uno).
+const TAMANOS = [
+  { id: "chico", nombre: "Chico" },
+  { id: "grande", nombre: "Grande" },
+  { id: "gigante", nombre: "Gigante" },
+];
+const COLORES = [
+  { id: "", nombre: "Sin color" },
+  { id: "violeta", nombre: "Violeta" },
+  { id: "cian", nombre: "Cian" },
+  { id: "verde", nombre: "Verde" },
+  { id: "rojo", nombre: "Rojo" },
+  { id: "ambar", nombre: "Ámbar" },
+];
+const tamanoDe = (id) => config.tamanos?.[id] ?? (config.grandes?.includes(id) ? "grande" : "chico");
+const colorDe = (id) => config.colores?.[id] ?? "";
+function fijar(campo, id, valor) {
+  config[campo] = { ...(config[campo] || {}), [id]: valor };
+  if (campo === "tamanos") config.grandes = (config.grandes || []).filter((x) => x !== id);
+  guardarConfig();
+}
+let seleccionado = null; // botón de «Tus botones» que se está editando
 const guardarConfig = () => guardado.escribir(CLAVE_CONFIG, JSON.stringify(config));
+
+// ---------- Perfiles de un toque: el mando se arma solo según cómo lo vas a usar ----------
+
+const CLAVE_PERFIL = "mando-perfil-v1";
+const ICONO_PERFIL = {
+  simple: '<rect x="6" y="2.5" width="12" height="19" rx="5"/><circle cx="12" cy="10" r="3.2"/><path d="M10 16h4"/>',
+  series: '<rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M10 8.2v5.6l4.6-2.8z"/><path d="M8 20.5h8"/>',
+  presentacion: '<rect x="3" y="3.5" width="18" height="12" rx="2"/><path d="M12 15.5v5M8.5 20.5h7"/><path d="m10.5 7.5 3 2-3 2"/>',
+  completo: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>',
+};
+const PERFILES = [
+  {
+    id: "simple",
+    nombre: "Simple",
+    texto: "Pocos botones, bien grandes. Ideal para cualquiera.",
+    config: { favoritos: ["MUTE", "VOL_DOWN", "VOL_UP", "POWER"], grandes: ["MUTE", "POWER"], ocultas: ["basicos", "navegacion", "reproduccion", "apps", "numeros"] },
+  },
+  {
+    id: "series",
+    nombre: "Series y pelis",
+    texto: "Netflix, YouTube, play y volumen a mano.",
+    config: { favoritos: ["PLAY_PAUSE", "APP_NETFLIX", "APP_YOUTUBE", "MUTE", "VOL_DOWN", "VOL_UP"], grandes: ["PLAY_PAUSE"], ocultas: ["numeros"] },
+  },
+  {
+    id: "presentacion",
+    nombre: "Presentación",
+    texto: "Pasá diapositivas, pantalla completa y silencio.",
+    config: { favoritos: ["RIGHT", "LEFT", "FULLSCREEN", "MUTE"], grandes: ["RIGHT"], ocultas: ["apps", "numeros", "reproduccion"] },
+  },
+  {
+    id: "completo",
+    nombre: "Completo",
+    texto: "Todos los botones: navegación, apps y números.",
+    config: { favoritos: [...FAVORITOS_INICIALES], grandes: [], ocultas: [] },
+  },
+];
+const perfilActual = () => guardado.leer(CLAVE_PERFIL);
+
+function aplicarPerfil(id) {
+  const perfil = PERFILES.find((p) => p.id === id);
+  if (!perfil) return;
+  const base = JSON.parse(JSON.stringify(perfil.config));
+  config = { ...base, tamanos: Object.fromEntries(base.grandes.map((id) => [id, "grande"])), colores: {}, grandes: [] };
+  seleccionado = null;
+  guardarConfig();
+  guardado.escribir(CLAVE_PERFIL, id);
+  render();
+}
+
+function botonPerfil(p, clase) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = clase;
+  b.dataset.perfil = p.id;
+  b.setAttribute("aria-pressed", String(perfilActual() === p.id));
+  b.innerHTML = `<span class="${clase}-icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONO_PERFIL[p.id]}</svg></span><span class="${clase}-textos"><strong></strong><span></span></span>`;
+  b.querySelector("strong").textContent = p.nombre;
+  b.querySelector(`.${clase}-textos > span`).textContent = p.texto;
+  return b;
+}
+
+// Hoja «¿Cómo lo vas a usar?»: aparece la primera vez, antes del recorrido.
+function elegirPerfil(alTerminar) {
+  const hoja = $("perfiles");
+  const lista = $("perfiles-lista");
+  lista.replaceChildren(...PERFILES.map((p) => botonPerfil(p, "perfil")));
+  hoja.hidden = false;
+  document.documentElement.classList.add("sin-scroll");
+  lista.querySelector("button")?.focus();
+  lista.onclick = (e) => {
+    const b = e.target.closest("[data-perfil]");
+    if (!b) return;
+    navigator.vibrate?.(12);
+    aplicarPerfil(b.dataset.perfil);
+    hoja.hidden = true;
+    document.documentElement.classList.remove("sin-scroll");
+    alTerminar?.();
+  };
+}
 
 // ---------- Estado de la sesión ----------
 
@@ -190,7 +293,7 @@ function crearSeccion(id, titulo, { oculta = false } = {}) {
   h.className = "seccion__titulo";
   h.textContent = titulo;
   cabeza.append(h);
-  if (modo === "editar" && id !== "favoritos") {
+  if (modo === "editar" && id !== "favoritos" && id !== "estilos") {
     const ojo = document.createElement("button");
     ojo.type = "button";
     ojo.className = "seccion__ojo";
@@ -211,6 +314,14 @@ function render() {
   for (const b of document.querySelectorAll(".modos__btn")) b.setAttribute("aria-pressed", String(b.dataset.modo === modo));
   $("aviso-edicion").hidden = modo !== "editar";
 
+  // Estilos rápidos (solo en Editar): rearma todo el mando de un toque.
+  if (modo === "editar") {
+    const estilos = crearSeccion("estilos", "Estilos rápidos");
+    estilos.seccion.dataset.tour = "estilos";
+    estilos.rejilla.append(...PERFILES.map((p) => botonPerfil(p, "estilo")));
+    mando.append(estilos.seccion);
+  }
+
   // Tus botones
   const fav = crearSeccion("favoritos", "Tus botones");
   if (!config.favoritos.length) {
@@ -219,23 +330,32 @@ function render() {
     vacio.textContent = modo === "editar" ? "Tocá ☆ en cualquier botón para sumarlo acá." : "Todavía no elegiste botones. Tocá Editar.";
     fav.rejilla.append(vacio);
   }
-  config.favoritos.forEach((id, i) => {
+  config.favoritos.forEach((id) => {
     const item = document.createElement("div");
     item.className = "favorito";
-    if (config.grandes.includes(id)) item.classList.add("is-grande");
-    item.append(crearBoton(BOTON[id], { favorito: true }));
+    item.dataset.id = id;
+    const tamano = tamanoDe(id);
+    if (tamano !== "chico") item.classList.add(`is-${tamano}`);
+    if (seleccionado === id && modo === "editar") item.classList.add("is-seleccionado");
+    const boton = crearBoton(BOTON[id], { favorito: true });
+    if (colorDe(id)) boton.dataset.color = colorDe(id);
     if (modo === "editar") {
-      const editor = document.createElement("div");
-      editor.className = "editor";
-      const nombre = BOTON[id].nombre;
-      editor.innerHTML = `
-        <button type="button" data-mover="-1" data-id="${id}" aria-label="Mover ${nombre} antes" ${i === 0 ? "disabled" : ""}>◀</button>
-        <button type="button" data-grande="${id}" aria-label="${config.grandes.includes(id) ? "Achicar" : "Agrandar"} ${nombre}">${config.grandes.includes(id) ? "↙ Achicar" : "⤢ Agrandar"}</button>
-        <button type="button" data-mover="1" data-id="${id}" aria-label="Mover ${nombre} después" ${i === config.favoritos.length - 1 ? "disabled" : ""}>▶</button>`;
-      item.append(editor);
+      boton.setAttribute("aria-label", `${BOTON[id].nombre}: tocá para editar o arrastrá para mover`);
+      const asa = document.createElement("span");
+      asa.className = "favorito__asa";
+      asa.setAttribute("aria-hidden", "true");
+      asa.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+      boton.append(asa);
     }
+    item.append(boton);
     fav.rejilla.append(item);
   });
+  if (modo === "editar" && config.favoritos.length) {
+    const ayuda = document.createElement("p");
+    ayuda.className = "favoritos__ayuda";
+    ayuda.textContent = "Tocá un botón para cambiar su tamaño o color · Mantené y arrastrá para moverlo";
+    fav.seccion.append(ayuda);
+  }
   mando.append(fav.seccion);
 
   // Secciones del catálogo
@@ -259,28 +379,16 @@ function pulso(el) {
 $("mando").addEventListener("click", (evento) => {
   const t = evento.target;
 
+  const estilo = t.closest("[data-perfil]");
+  if (estilo) {
+    navigator.vibrate?.(12);
+    return aplicarPerfil(estilo.dataset.perfil);
+  }
+
   const ojo = t.closest("[data-ojo]");
   if (ojo) {
     const id = ojo.dataset.ojo;
     config.ocultas = config.ocultas.includes(id) ? config.ocultas.filter((x) => x !== id) : [...config.ocultas, id];
-    guardarConfig();
-    return render();
-  }
-
-  const mover = t.closest("[data-mover]");
-  if (mover) {
-    const lista = config.favoritos;
-    const i = lista.indexOf(mover.dataset.id);
-    const j = i + Number(mover.dataset.mover);
-    if (j >= 0 && j < lista.length) [lista[i], lista[j]] = [lista[j], lista[i]];
-    guardarConfig();
-    return render();
-  }
-
-  const grande = t.closest("[data-grande]");
-  if (grande) {
-    const id = grande.dataset.grande;
-    config.grandes = config.grandes.includes(id) ? config.grandes.filter((x) => x !== id) : [...config.grandes, id];
     guardarConfig();
     return render();
   }
@@ -290,24 +398,158 @@ $("mando").addEventListener("click", (evento) => {
   const id = boton.dataset.accion;
 
   if (modo === "editar") {
-    // En Editar ningún botón manda acciones: solo entra o sale de Tus botones.
+    // En Editar ningún botón manda acciones.
+    if (arrastre.acabaDeMover) return;
+    if (boton.closest(".seccion--favoritos")) {
+      // Tocar uno de tus botones lo selecciona para cambiarle tamaño o color.
+      seleccionado = seleccionado === id ? null : id;
+      render();
+      return pintarBarraEdicion();
+    }
+    // Tocar uno de las secciones lo suma (o lo saca) de tus botones.
     if (config.favoritos.includes(id)) {
       config.favoritos = config.favoritos.filter((x) => x !== id);
-      config.grandes = config.grandes.filter((x) => x !== id);
+      if (seleccionado === id) seleccionado = null;
     } else {
       config.favoritos = [...config.favoritos, id];
+      seleccionado = id;
+      navigator.vibrate?.(12);
     }
     guardarConfig();
-    return render();
+    render();
+    pintarBarraEdicion();
+    if (seleccionado === id) document.querySelector(`.favorito[data-id="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
   }
 
   pulso(boton);
   enviar(id);
 });
 
+// ---------- Barra de edición: tamaño, color y quitar del botón seleccionado ----------
+
+function pintarBarraEdicion() {
+  const barra = $("barra-edicion");
+  if (modo !== "editar" || !seleccionado || !config.favoritos.includes(seleccionado)) {
+    barra.hidden = true;
+    body.classList.remove("con-barra");
+    return;
+  }
+  barra.hidden = false;
+  body.classList.add("con-barra");
+  $("barra-nombre").textContent = BOTON[seleccionado].nombre;
+  const tamanos = $("barra-tamanos");
+  tamanos.replaceChildren(
+    ...TAMANOS.map((t) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.tamano = t.id;
+      b.textContent = t.nombre;
+      b.setAttribute("aria-pressed", String(tamanoDe(seleccionado) === t.id));
+      return b;
+    }),
+  );
+  const colores = $("barra-colores");
+  colores.replaceChildren(
+    ...COLORES.map((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "muestra";
+      b.dataset.colorElegir = c.id || "ninguno";
+      b.setAttribute("aria-label", c.nombre);
+      b.setAttribute("aria-pressed", String(colorDe(seleccionado) === c.id));
+      return b;
+    }),
+  );
+  // Que el botón elegido quede a la vista, arriba de la barra, para ver cada cambio al instante.
+  (() => {
+    const el = document.querySelector(`.favorito[data-id="${seleccionado}"]`);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const tope = innerHeight - barra.offsetHeight - 16;
+    if (r.bottom > tope || r.top < 70) scrollBy({ top: r.bottom > tope ? r.bottom - tope : r.top - 80 });
+  })();
+}
+
+$("barra-edicion").addEventListener("click", (e) => {
+  if (!seleccionado) return;
+  const t = e.target;
+  const tamano = t.closest("[data-tamano]");
+  const color = t.closest("[data-color-elegir]");
+  if (tamano) fijar("tamanos", seleccionado, tamano.dataset.tamano);
+  else if (color) fijar("colores", seleccionado, color.dataset.colorElegir === "ninguno" ? "" : color.dataset.colorElegir);
+  else if (t.closest("#barra-quitar")) {
+    config.favoritos = config.favoritos.filter((x) => x !== seleccionado);
+    guardarConfig();
+    seleccionado = null;
+  } else if (t.closest("#barra-listo")) seleccionado = null;
+  else return;
+  navigator.vibrate?.(10);
+  render();
+  pintarBarraEdicion();
+});
+
+// ---------- Arrastrar para mover (mouse y dedo) ----------
+
+const arrastre = { id: null, x: 0, y: 0, moviendo: false, acabaDeMover: false, timer: 0 };
+
+$("mando").addEventListener("pointerdown", (e) => {
+  if (modo !== "editar" || (e.button !== undefined && e.button !== 0)) return;
+  const item = e.target.closest(".seccion--favoritos .favorito");
+  if (!item) return;
+  Object.assign(arrastre, { id: item.dataset.id, x: e.clientX, y: e.clientY, moviendo: false, acabaDeMover: false });
+  // Con el dedo, mantener apretado un momento también lo «levanta».
+  clearTimeout(arrastre.timer);
+  arrastre.timer = setTimeout(() => levantar(item), 280);
+});
+
+function levantar(item) {
+  if (!arrastre.id || arrastre.moviendo) return;
+  arrastre.moviendo = true;
+  item.classList.add("is-arrastrando");
+  body.classList.add("arrastrando");
+  navigator.vibrate?.(15);
+}
+
+addEventListener("pointermove", (e) => {
+  if (!arrastre.id) return;
+  const item = document.querySelector(`.favorito[data-id="${arrastre.id}"]`);
+  if (!item) return;
+  if (!arrastre.moviendo) {
+    if (Math.hypot(e.clientX - arrastre.x, e.clientY - arrastre.y) < 8) return;
+    levantar(item);
+  }
+  e.preventDefault();
+  const debajo = document.elementFromPoint(e.clientX, e.clientY)?.closest(".seccion--favoritos .favorito");
+  if (!debajo || debajo === item) return;
+  const r = debajo.getBoundingClientRect();
+  const despues = e.clientY > r.top + r.height / 2 || (Math.abs(e.clientY - (r.top + r.height / 2)) < r.height / 4 && e.clientX > r.left + r.width / 2);
+  debajo.parentNode.insertBefore(item, despues ? debajo.nextSibling : debajo);
+}, { passive: false });
+
+function soltar() {
+  clearTimeout(arrastre.timer);
+  if (!arrastre.id) return;
+  if (arrastre.moviendo) {
+    config.favoritos = [...document.querySelectorAll(".seccion--favoritos .favorito")].map((el) => el.dataset.id);
+    guardarConfig();
+    arrastre.acabaDeMover = true;
+    setTimeout(() => (arrastre.acabaDeMover = false), 50);
+    body.classList.remove("arrastrando");
+    render();
+    pintarBarraEdicion();
+  }
+  arrastre.id = null;
+  arrastre.moviendo = false;
+}
+addEventListener("pointerup", soltar);
+addEventListener("pointercancel", soltar);
+
 function cambiarModo(nuevo) {
   modo = nuevo;
+  if (nuevo !== "editar") seleccionado = null;
   render();
+  pintarBarraEdicion();
   // La primera vez que se entra a Editar, un recorrido corto explica cómo armarlo.
   if (nuevo === "editar") setTimeout(() => recorrido.siPrimeraVez("editar"), 250);
 }
@@ -357,7 +599,9 @@ function abrirMando() {
   $("app").hidden = false;
   modo = "usar";
   render();
-  setTimeout(() => recorrido.siPrimeraVez("mando"), 700);
+  const guiar = () => setTimeout(() => recorrido.siPrimeraVez("mando"), 500);
+  if (!perfilActual()) setTimeout(() => elegirPerfil(guiar), 300);
+  else guiar();
 }
 
 function volverAlCodigo(motivo) {
@@ -385,8 +629,9 @@ const RECORRIDOS = {
     id: "editar-v1",
     etiqueta: "Editar",
     pasos: [
-      { objetivo: '.seccion--basicos .boton', titulo: "Elegí tus botones", texto: "Tocá cualquier botón para sumarlo a «Tus botones» (☆ → ★). Tocalo de nuevo para sacarlo." },
-      { objetivo: '[data-tour="favoritos"] .editor', titulo: "Agrandá y ordená", texto: "Con ⤢ lo hacés grande y con ◀ ▶ lo movés. Se guarda solo en este celular." },
+      { objetivo: '[data-tour="estilos"]', titulo: "Un toque y listo", texto: "Elegí un estilo y el mando se arma solo. Después lo ajustás a tu gusto." },
+      { objetivo: '.seccion--basicos .boton', titulo: "Sumá los que quieras", texto: "Tocá cualquier botón de abajo y pasa a «Tus botones»." },
+      { objetivo: '[data-tour="favoritos"] .favorito', titulo: "Hacelo a tu medida", texto: "Tocá uno de tus botones para cambiarle el tamaño o el color. Mantenelo apretado y arrastralo para moverlo." },
       { objetivo: '[data-modo="usar"]', titulo: "Listo, a usar", texto: "Volvé a «Usar» y controlá la tele. En Editar los botones no mandan nada." },
     ],
   },
