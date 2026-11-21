@@ -10,8 +10,8 @@ Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca e
 | --- | --- | --- | --- | --- |
 | 1 | Juan «Juanse» Aguirre · @aguirrejuanse | Juanseagui@gmail.com | `feat/mando` | [Mando y editor · #1](https://github.com/JuanMorales10/MANDO/issues/1) |
 | 2 | Juan Morales · @JuanMorales10 | juanmoralesp19@gmail.com | `feat/motor` | [Motor y pruebas · #2](https://github.com/JuanMorales10/MANDO/issues/2) |
-| 3 | Santiago · @sponte77 | Sponte77@gmail.com | `feat/tv` | [TV y visual de proyector](#compu-3--santiago--tv-y-visual-de-proyector) |
-| 4 | Nicolás «Nico» Faingold · @nicofaingold066-sketch | nicofaingold066@gmail.com | `feat/demo` | [Integración, GitHub y pitch · #3](https://github.com/JuanMorales10/MANDO/issues/3) |
+| 3 | Nicolás «Nico» Faingold · @nicofaingold066-sketch | nicofaingold066@gmail.com | `feat/tv` | [TV y visual de proyector · #4](https://github.com/JuanMorales10/MANDO/issues/4) |
+| 4 | Santiago · @sponte77 | Sponte77@gmail.com | `feat/demo` | [Integración, GitHub y pitch · #3](https://github.com/JuanMorales10/MANDO/issues/3) |
 
 ## Acuerdos antes de arrancar
 
@@ -41,9 +41,9 @@ cd MANDO
 
 - Exportá `initialState = { power: true, volume: 15, muted: false, channel: 1 }` y `applyAction(state, action)`.
 - `MUTE` alterna silencio sin cambiar el volumen guardado. `VOL_UP` y `VOL_DOWN` cambian el volumen de a 1, de 0 a 100. Una acción desconocida no cambia nada. No modifiques el estado original.
-- Subí `MUTE` primero. Después probá dos pulsaciones para volver al estado inicial, volumen preservado, ambos topes, acción desconocida y que no se modifica el objeto original. Corré `node --test tests/tv-state.test.mjs`. Pasale a Nico los nombres de los dos exports y el resultado. Nada de servidor ni base de datos para la entrega inicial.
+- Subí `MUTE` primero. Después probá dos pulsaciones para volver al estado inicial, volumen preservado, ambos topes, acción desconocida y que no se modifica el objeto original. Corré `node --test tests/tv-state.test.mjs`. Pasale a Santiago los nombres de los dos exports y el resultado. Nada de servidor ni base de datos para la entrega inicial.
 
-## Compu 3 · Santiago · TV y visual de proyector
+## Compu 3 · Nico · TV y visual de proyector
 
 **Rama** `feat/tv` · **Archivos** `public/tv.js` y `public/tv.css`.
 
@@ -51,7 +51,7 @@ cd MANDO
 - Mostrá **TV SIMULADA**, volumen grande y un aviso **SILENCIO** que se lea desde el fondo. Usá texto, ícono y contraste, no solo color. Al desactivar silencio, que vuelva a verse el volumen anterior. Estilos con prefijo `.mando-tv`.
 - No pongas video, fuentes externas ni controles que todavía no funcionan. Abrí PR con la primera pantalla usable. Una vez integrada, probala en pantalla completa y avisá si algo se corta o no se lee.
 
-## Compu 4 · Nico · Integración, GitHub y pitch
+## Compu 4 · Santiago · Integración, GitHub y pitch
 
 **Rama** `feat/demo` · **Archivos** `public/index.html`, `public/app.js`, `public/demo.css`, `package.json` y `README.md`.
 
@@ -63,8 +63,8 @@ cd MANDO
 
 | Minuto | Hito |
 | --- | --- |
-| 0–5 | Nico pasa el repo y los contratos. Todos abren su rama. Cursor construye y cada persona edita sus archivos. |
-| 25 | Cada compu sube su bloque y abre PR a `main`. Nico integra. Si hay conflicto, lo resuelve con el dueño del archivo. |
+| 0–5 | Santiago pasa el repo y los contratos. Todos abren su rama. Cursor construye y cada persona edita sus archivos. |
+| 25 | Cada compu sube su bloque y abre PR a `main`. Santiago integra. Si hay conflicto, lo resuelve con el dueño del archivo. |
 | 45 | Hagan el recorrido completo de «Silencio» en la notebook. Guarden ese commit como respaldo. Si funciona, ya pueden publicar. |
 | 60 | Prueben desde otro equipo, recarguen y revisen tamaño, volumen y proyector. Usen Grokbot para buscar fallas en ese recorrido. Arreglen solo lo que lo rompa. |
 | 75–90 | Congelen, ensayen y envíen **visión + repo + demo** en **Equipos**. Guardar un borrador no cuenta. **Cierre a las 15:00 de Mendoza**. Si el reloj aprieta, entreguen antes el último commit que funciona. Celu y QR quedan afuera hasta tener la entrega asegurada. |
