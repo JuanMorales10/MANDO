@@ -2,6 +2,8 @@
 // Manda al puente solo mensajes de una lista cerrada:
 //   {t:"m",x,y} mover · {t:"c"} clic · {t:"r"} clic derecho · {t:"z"} centrar
 //   {t:"s",y} rueda · {t:"k",n:"izq"|"der"|...} tecla para pasar diapositivas
+//   {t:"l",v:1|0} láser · {t:"d",v:1|0} empezar / terminar un trazo · {t:"b"} borrar los trazos
+//   {t:"e",n:"bloquear"|"suspender"|"apagar"} energía (siempre después de mantener apretado)
 // El volumen y el resto de los botones están en el mando (celular.html).
 
 const $ = (id) => document.getElementById(id);
@@ -48,7 +50,12 @@ function alRecibir(m) {
   }
   if (m.t === "hola") {
     $("sin-clics").hidden = m.clics !== false;
+    // El láser y la energía se muestran solo si la compu avisa que los ofrece.
+    if (m.laser !== undefined) $("herramientas").hidden = m.laser !== true;
+    if (m.energia !== undefined) ofrecidas = Array.isArray(m.energia) ? m.energia : [];
+    pintarEnergia();
   }
+  if (m.t === "energia") alResultadoEnergia(m);
 }
 
 function conectar() {
@@ -79,6 +86,7 @@ function conectar() {
   ws.onclose = (e) => {
     if (ws !== este) return; // es una conexión vieja: ya hay otra en su lugar
     ws = null;
+    alCortarse();
     if (cortado) return;
     if (e.code === 4000) {
       ponerEstado("sin", "Otro teléfono tomó el control");
@@ -120,8 +128,10 @@ async function post(lista) {
   if (r.status === 409) throw new Error("Otro teléfono tiene el control");
   if (!r.ok) throw new Error("Sin conexión");
   const datos = await r.json();
-  alRecibir({ t: "hola", clics: datos.clics });
+  alRecibir({ t: "hola", clics: datos.clics, laser: datos.laser, energia: datos.energia });
   alRecibir(datos.vol);
+  // Por este camino el resultado de una orden de energía llega en la misma respuesta.
+  if (Array.isArray(datos.acuses)) for (const a of datos.acuses) if (a && a.t === "energia") alRecibir(a);
 }
 
 async function probarPost() {
@@ -151,6 +161,7 @@ async function vaciarCola() {
     } catch (e) {
       modoPost = false;
       cola = [];
+      alCortarse();
       ponerEstado("sin", e.message);
       fallosWs = 0;
       if (!e.sinCodigo) setTimeout(conectar, 2000);
@@ -173,7 +184,8 @@ function enviar(m) {
     if (ult && ult.t === m.t && (m.t === "m" || m.t === "s")) {
       if (m.t === "m") ult.x = Math.max(-400, Math.min(400, ult.x + m.x));
       ult.y = Math.max(m.t === "m" ? -400 : -300, Math.min(m.t === "m" ? 400 : 300, ult.y + m.y));
-    } else if (cola.length < 64) {
+    } else if (cola.length < 64 || m.t === "d") {
+      // El fin de un trazo no se descarta aunque la cola esté llena.
       cola.push({ ...m });
     }
     vaciarCola();
@@ -376,7 +388,8 @@ function alMoverse(e) {
     return;
   }
   if (!ejes || ahora < pausaHasta) return;
-  if (ajustes.apretar && !apoyado) {
+  // Mantener apretado «Dibujar» cuenta como dedo apoyado: el trazo sigue al teléfono.
+  if (ajustes.apretar && !apoyado && !dibujando) {
     suaveX = 0;
     suaveY = 0;
     return;
@@ -420,6 +433,7 @@ function pintarActivar() {
 
 activar.onclick = async () => {
   if (giroActivo) {
+    soltarTrazo();
     giroActivo = false;
     calibracion = null;
     pintarCalibracion();
@@ -559,7 +573,12 @@ botonCortar.onclick = () => {
     conectar();
     return;
   }
+  // Antes de cortar se suelta el trazo y se apaga el láser (la compu igual limpia al desconectarse).
+  soltarTrazo();
+  if (laserPrendido) enviar({ t: "l", v: 0 });
+  cancelarEnergia();
   cortado = true;
+  alCortarse();
   giroActivo = false;
   calibracion = null;
   pintarCalibracion();
@@ -591,9 +610,221 @@ $("clic").onclick = () => enviar({ t: "c" });
 $("derecho").onclick = () => enviar({ t: "r" });
 $("centrar").onclick = () => enviar({ t: "z" });
 
+// ---------- Láser y dibujo sobre la pantalla ----------
+//
+// «Láser» es un interruptor. «Dibujar» se mantiene apretado: mientras el dedo no se levanta,
+// el cursor deja trazo. La fila aparece solo si la compu avisó laser:true en el «hola».
+
+const botonLaser = $("laser");
+const botonDibujar = $("dibujar");
+let laserPrendido = false;
+let dibujando = false;
+let trazo = null; // dedo que mantiene apretado «Dibujar»: { id, x, y, inicio }
+
+const hayConexion = () => modoPost || Boolean(ws && ws.readyState === WebSocket.OPEN);
+
+function pintarLaser() {
+  botonLaser.setAttribute("aria-pressed", String(laserPrendido));
+  botonDibujar.dataset.apretado = dibujando ? "si" : "no";
+}
+
+function ponerLaser(prendido) {
+  laserPrendido = prendido;
+  enviar({ t: "l", v: prendido ? 1 : 0 });
+  pintarLaser();
+}
+
+function soltarTrazo() {
+  trazo = null;
+  if (!dibujando) return;
+  dibujando = false;
+  enviar({ t: "d", v: 0 });
+  pintarLaser();
+}
+
+// Se cortó la conexión: la compu ya apagó el láser y cerró el trazo por su cuenta.
+function alCortarse() {
+  laserPrendido = false;
+  dibujando = false;
+  trazo = null;
+  pintarLaser();
+}
+
+botonLaser.onclick = () => {
+  if (!hayConexion()) {
+    aviso.textContent = "Sin conexión con la compu.";
+    return;
+  }
+  ponerLaser(!laserPrendido);
+  if (navigator.vibrate) navigator.vibrate(10);
+};
+
+botonDibujar.addEventListener("pointerdown", (e) => {
+  if (trazo) return;
+  if (!hayConexion()) {
+    aviso.textContent = "Sin conexión con la compu.";
+    return;
+  }
+  try {
+    botonDibujar.setPointerCapture(e.pointerId);
+  } catch {
+    /* sin captura, igual anda mientras el dedo no salga del botón */
+  }
+  trazo = { id: e.pointerId, x: e.clientX, y: e.clientY, inicio: performance.now() };
+  if (!laserPrendido) ponerLaser(true); // así se ve por dónde va el trazo
+  dibujando = true;
+  enviar({ t: "d", v: 1 });
+  pintarLaser();
+  if (navigator.vibrate) navigator.vibrate(10);
+});
+
+botonDibujar.addEventListener("pointermove", (e) => {
+  if (!trazo || e.pointerId !== trazo.id) return;
+  const dx = e.clientX - trazo.x;
+  const dy = e.clientY - trazo.y;
+  trazo.x = e.clientX;
+  trazo.y = e.clientY;
+  // Sin el puntero por movimiento, el mismo dedo dibuja arrastrando (como en la zona táctil).
+  if (!giroActivo) {
+    const ganancia = ajustes.velocidad / 11;
+    accX += dx * ganancia;
+    accY += dy * ganancia;
+  }
+});
+
+function finTrazo(e) {
+  if (!trazo || e.pointerId !== trazo.id) return;
+  const corto = performance.now() - trazo.inicio < 250;
+  soltarTrazo();
+  if (corto) aviso.textContent = "Mantené apretado «Dibujar» y mové el teléfono: mientras no sueltes, deja trazo.";
+}
+for (const tipo of ["pointerup", "pointercancel", "lostpointercapture"]) botonDibujar.addEventListener(tipo, finTrazo);
+botonDibujar.addEventListener("contextmenu", (e) => e.preventDefault());
+
+$("borrar").onclick = () => {
+  enviar({ t: "b" });
+  if (navigator.vibrate) navigator.vibrate(10);
+};
+
+// ---------- Compu: bloquear, suspender, apagar ----------
+//
+// Cada botón pide mantener apretado un segundo y medio; si se suelta antes, no manda nada.
+// Solo se muestran las acciones que la compu ofrece en el «hola».
+
+const MANTENER = 1500;
+const NOMBRES = { bloquear: "Bloquear pantalla", suspender: "Suspender", apagar: "Apagar" };
+const avisoEnergia = $("energia-aviso");
+const botonesEnergia = [...document.querySelectorAll("[data-energia]")];
+let ofrecidas = [];
+let apretando = null; // { boton, id, desde, reloj }
+
+function decirEnergia(texto, tono = "") {
+  avisoEnergia.textContent = texto;
+  avisoEnergia.dataset.tono = tono;
+}
+
+function pintarEnergia() {
+  let alguna = false;
+  for (const b of botonesEnergia) {
+    b.hidden = !ofrecidas.includes(b.dataset.energia);
+    if (!b.hidden) alguna = true;
+  }
+  if (apretando && apretando.boton.hidden) cancelarEnergia();
+  $("energia-bajada").hidden = !alguna;
+  $("energia-vacio").hidden = alguna;
+  $("energia-vacio").textContent = "El servidor no ofrece estas acciones.";
+}
+
+function pintarAvance() {
+  if (!apretando) return;
+  const avance = Math.min(1, (performance.now() - apretando.desde) / MANTENER);
+  apretando.boton.style.setProperty("--avance", avance.toFixed(3));
+  requestAnimationFrame(pintarAvance);
+}
+
+function cancelarEnergia(texto) {
+  if (!apretando) return;
+  clearTimeout(apretando.reloj);
+  apretando.boton.dataset.apretado = "no";
+  apretando.boton.style.removeProperty("--avance");
+  apretando = null;
+  if (texto) decirEnergia(texto);
+}
+
+function confirmarEnergia() {
+  if (!apretando) return;
+  const accion = apretando.boton.dataset.energia;
+  cancelarEnergia();
+  if (!hayConexion()) {
+    decirEnergia("Sin conexión con la compu.", "mal");
+    return;
+  }
+  enviar({ t: "e", n: accion });
+  if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+  decirEnergia(`«${NOMBRES[accion]}»: pedido enviado a la compu…`);
+  // La compu acepta una orden de estas cada 5 segundos.
+  for (const b of botonesEnergia) b.disabled = true;
+  setTimeout(() => {
+    for (const b of botonesEnergia) b.disabled = false;
+  }, 5000);
+}
+
+function alResultadoEnergia(m) {
+  const nombre = typeof m.n === "string" && Object.keys(NOMBRES).includes(m.n) ? NOMBRES[m.n] : "La orden";
+  if (m.ok === true) decirEnergia(`«${nombre}»: hecho.`, "ok");
+  else decirEnergia(`«${nombre}»: la compu no lo hizo. Esperá unos segundos y probá de nuevo.`, "mal");
+}
+
+for (const boton of botonesEnergia) {
+  boton.addEventListener("pointerdown", (e) => {
+    if (apretando) return;
+    if (!hayConexion()) {
+      decirEnergia("Sin conexión con la compu.", "mal");
+      return;
+    }
+    try {
+      boton.setPointerCapture(e.pointerId);
+    } catch {
+      /* sin captura, igual anda mientras el dedo no salga del botón */
+    }
+    apretando = { boton, id: e.pointerId, desde: performance.now(), reloj: setTimeout(confirmarEnergia, MANTENER) };
+    boton.dataset.apretado = "si";
+    decirEnergia("Seguí apretando…");
+    requestAnimationFrame(pintarAvance);
+  });
+  boton.addEventListener("pointermove", (e) => {
+    if (!apretando || apretando.boton !== boton || apretando.id !== e.pointerId) return;
+    // Correr el dedo bien afuera del botón es arrepentirse.
+    const r = boton.getBoundingClientRect();
+    const fuera = e.clientX < r.left - 24 || e.clientX > r.right + 24 || e.clientY < r.top - 24 || e.clientY > r.bottom + 24;
+    if (fuera) cancelarEnergia("Cancelado: no se mandó nada.");
+  });
+  for (const tipo of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    boton.addEventListener(tipo, (e) => {
+      if (!apretando || apretando.boton !== boton || apretando.id !== e.pointerId) return;
+      cancelarEnergia("Soltaste antes de tiempo: no se mandó nada. Mantené apretado hasta que se llene.");
+    });
+  }
+  boton.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+
+// Al ocultarse la página no puede quedar un trazo abierto ni una confirmación a medias.
+// Al volver, si el láser figura prendido se manda de nuevo, por si la compu lo apagó mientras tanto.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") {
+    soltarTrazo();
+    cancelarEnergia();
+  } else if (laserPrendido && hayConexion()) {
+    enviar({ t: "l", v: 1 });
+  }
+});
+window.addEventListener("pagehide", soltarTrazo);
+
 // ---------- Pestañas ----------
 
 function irA(vista) {
+  soltarTrazo();
+  cancelarEnergia();
   for (const b of document.querySelectorAll("[data-ir]")) b.setAttribute("aria-pressed", String(b.dataset.ir === vista));
   for (const s of document.querySelectorAll("[data-vista]")) s.hidden = s.dataset.vista !== vista;
   try {

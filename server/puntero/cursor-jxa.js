@@ -1,6 +1,8 @@
 // Plan B del ayudante del puntero, sin compilar nada: JavaScript para macOS (JXA),
 // que viene con el sistema. Mismo protocolo que puntero/cursor.swift, una orden por línea:
 //   m <dx> <dy> · c · r · z · k <tecla> · e · pedir · q   ("s", la rueda, no está en el plan B)
+// Tampoco dibuja: no anuncia "laser=si" y las órdenes del láser y del dibujo ("l", "d", "b") y
+// "lock" se ignoran, como cualquier otra que no conozca. Para bloquear, el servidor usa pmset.
 // Se ejecuta con: osascript -l JavaScript server/puntero/cursor-jxa.js
 
 ObjC.import("Cocoa");
@@ -70,7 +72,7 @@ function procesar(linea) {
     const l = limites();
     mover(l.origin.x + l.size.width / 2, l.origin.y + l.size.height / 2);
   } else if (orden === "k" && Object.prototype.hasOwnProperty.call(TECLAS, a)) tecla(TECLAS[a]);
-  // "s" (rueda) no está en el plan B: se ignora.
+  // "s" (rueda), "l", "d", "b" (láser y dibujo) y "lock" no están en el plan B: se ignoran.
 }
 
 function run() {

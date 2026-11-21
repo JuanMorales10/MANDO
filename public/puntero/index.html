@@ -31,6 +31,9 @@
         <button type="button" data-ir="presentacion" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M12 16v4M8 20h8" /></svg>Diapositivas
         </button>
+        <button type="button" data-ir="compu" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9" /><path d="M6.3 7a8 8 0 1 0 11.4 0" /></svg>Compu
+        </button>
         <button type="button" id="ir-mando">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>Mando
         </button>
@@ -67,6 +70,18 @@
             <svg viewBox="0 0 24 24"><path d="M10 13V4.5a1.5 1.5 0 0 1 3 0V12" /><path d="M13 11.5a1.5 1.5 0 0 1 3 0V13" /><path d="M16 12.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.6-2.2L4.4 16.4a1.5 1.5 0 0 1 2.3-1.9L10 17" /></svg>
           </span>
           <span class="pt__pad-texto" id="pad-texto">Tocá para hacer clic<small>Arrastrá para mover · Dos dedos: desplazar<br />Toque con dos dedos: clic derecho</small></span>
+        </div>
+
+        <div class="pt__fila" id="herramientas" hidden>
+          <button class="pt__boton pt__boton--herramienta" id="laser" type="button" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" /></svg>Láser
+          </button>
+          <button class="pt__boton pt__boton--herramienta pt__boton--sostener" id="dibujar" type="button" aria-label="Dibujar: mantené apretado y mové el teléfono">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-5L16 4l4 4L9 19z" /><path d="M14 6l4 4" /></svg>Dibujar
+          </button>
+          <button class="pt__boton pt__boton--herramienta" id="borrar" type="button" aria-label="Borrar los dibujos">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></svg>Borrar
+          </button>
         </div>
 
         <div class="pt__fila pt__fila--clics">
@@ -107,6 +122,33 @@
           <button class="pt__boton" data-tecla="enter" type="button">Enter</button>
           <button class="pt__boton" data-tecla="esc" type="button">Esc</button>
         </div>
+      </section>
+
+      <section class="pt__bloque" data-vista="compu" aria-label="Compu" hidden>
+        <h2 class="pt__titulo">Compu</h2>
+        <p class="pt__bajada" id="energia-bajada" hidden>Mantené apretado un botón hasta que se llene.</p>
+        <div class="pt__energia">
+          <button class="pt__mantener" data-energia="bloquear" type="button" hidden>
+            <span class="pt__mantener-icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            </span>
+            <span class="pt__mantener-texto"><b>Bloquear pantalla</b><small>La compu queda prendida</small></span>
+          </button>
+          <button class="pt__mantener" data-energia="suspender" type="button" hidden>
+            <span class="pt__mantener-icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" /></svg>
+            </span>
+            <span class="pt__mantener-texto"><b>Suspender</b><small>La Mac se duerme y se corta el puntero</small></span>
+          </button>
+          <button class="pt__mantener pt__mantener--peligro" data-energia="apagar" type="button" hidden>
+            <span class="pt__mantener-icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3v9" /><path d="M6.3 7a8 8 0 1 0 11.4 0" /></svg>
+            </span>
+            <span class="pt__mantener-texto"><b>Apagar</b><small>Cierra todo lo que esté abierto</small></span>
+          </button>
+        </div>
+        <p class="pt__aviso" id="energia-aviso" role="status"></p>
+        <p class="pt__aviso" id="energia-vacio">Todavía no hay conexión con la compu.</p>
       </section>
 
       <section class="pt__bloque pt__hoja" id="hoja-ajustes" popover data-vista="puntero" aria-label="Ajustes">
