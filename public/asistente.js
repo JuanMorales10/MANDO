@@ -45,11 +45,15 @@ export function mountAsistente({
     <section class="mandy mandy--chat" aria-label="Mandy, chatbot de MANDO">
       <header class="mandy__cab">
         <span class="mandy__avatar" aria-hidden="true">M</span>
-        <div>
+        <div class="mandy__titulos">
           <p class="mandy__nombre">Mandy</p>
           <p class="mandy__hint">Mismo chat en notebook y celu</p>
         </div>
+        <button type="button" class="mandy__min" id="mandy-min" aria-expanded="true" aria-controls="mandy-cuerpo" aria-label="Minimizar el chat de Mandy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
       </header>
+      <div class="mandy__cuerpo" id="mandy-cuerpo">
       <div class="mandy__chat" id="mandy-chat" role="log" aria-live="polite" aria-relevant="additions"></div>
       <div class="mandy__chips" id="mandy-chips"></div>
       <form class="mandy__form" id="mandy-form" autocomplete="off">
@@ -66,8 +70,37 @@ export function mountAsistente({
           <button type="submit" class="mandy__ok">Enviar</button>
         </div>
       </form>
+    </div>
     </section>
   `;
+
+  // Minimizar: queda solo la barrita «Mandy»; un toque la vuelve a abrir. Se recuerda la elección.
+  const seccion = root.querySelector(".mandy");
+  const botonMin = root.querySelector("#mandy-min");
+  const CLAVE_MIN = `mando-mandy-min-${origen}`;
+  const leerMin = () => {
+    try {
+      const v = localStorage.getItem(CLAVE_MIN);
+      return v === null ? origen === "celular" : v === "1"; // en el celu arranca minimizado: el mando primero
+    } catch {
+      return origen === "celular";
+    }
+  };
+  const fijarMin = (min) => {
+    seccion.classList.toggle("is-min", min);
+    botonMin.setAttribute("aria-expanded", String(!min));
+    botonMin.setAttribute("aria-label", min ? "Abrir el chat de Mandy" : "Minimizar el chat de Mandy");
+    try {
+      localStorage.setItem(CLAVE_MIN, min ? "1" : "0");
+    } catch {
+      // Sin almacenamiento: no se recuerda.
+    }
+  };
+  fijarMin(leerMin());
+  botonMin.addEventListener("click", () => fijarMin(!seccion.classList.contains("is-min")));
+  root.querySelector(".mandy__cab").addEventListener("click", (e) => {
+    if (seccion.classList.contains("is-min") && !e.target.closest("#mandy-min")) fijarMin(false);
+  });
 
   const form = root.querySelector("#mandy-form");
   const input = root.querySelector("#mandy-texto");
