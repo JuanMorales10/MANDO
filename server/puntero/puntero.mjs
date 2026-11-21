@@ -113,8 +113,12 @@ function aceptarWebSocket(req, socket) {
   let pendiente = Buffer.alloc(0);
   let abierto = true;
   const ws = {
+    visto: Date.now(), // última vez que llegó algo de este teléfono
     alMensaje: () => {},
     alCerrar: () => {},
+    ping() {
+      if (abierto) socket.write(Buffer.from([0x89, 0]));
+    },
     get abierto() {
       return abierto;
     },
@@ -162,6 +166,7 @@ function aceptarWebSocket(req, socket) {
       const cuerpo = Buffer.from(pendiente.subarray(inicio + 4, inicio + 4 + largo));
       for (let i = 0; i < cuerpo.length; i += 1) cuerpo[i] ^= mascara[i & 3];
       pendiente = pendiente.subarray(inicio + 4 + largo);
+      ws.visto = Date.now();
 
       if (codigoOp === 0x8) return terminar();
       if (codigoOp === 0x9) socket.write(Buffer.concat([Buffer.from([0x8a, cuerpo.length]), cuerpo]));
@@ -239,6 +244,19 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
   const revisar = setInterval(() => alCursor("e"), 2500);
   revisar.unref();
 
+  // Un teléfono que se fue sin avisar (se bloqueó, perdió el wifi, cerró la pestaña) no puede
+  // quedarse con el puntero: se le pregunta cada pocos segundos y, si no contesta, se lo suelta.
+  const latido = setInterval(() => {
+    if (!cliente) return;
+    if (Date.now() - cliente.visto > SIN_SENAL * 2) {
+      log("puntero: el teléfono dejó de responder; se libera el puntero");
+      cliente.cerrar(1001);
+      return;
+    }
+    cliente.ping();
+  }, 4000);
+  latido.unref();
+
   // ----- Órdenes: lista cerrada, todo lo demás se ignora -----
   let ventana = Date.now();
   let cuenta = 0;
@@ -287,10 +305,10 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
       return true;
     }
     f.cuenta += 1;
-    if (f.cuenta >= 8) {
+    if (f.cuenta >= 20) {
       f.cuenta = 0;
-      f.hasta = Date.now() + 60000;
-      log(`puntero: demasiados códigos incorrectos desde ${ip}; bloqueado un minuto`);
+      f.hasta = Date.now() + 30000;
+      log(`puntero: demasiados códigos incorrectos desde ${ip}; bloqueado 30 segundos`);
     }
     fallos.set(ip, f);
     return false;
@@ -317,6 +335,7 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
       return;
     }
     const ahora = Date.now();
+    if (cliente && ahora - cliente.visto > SIN_SENAL) cliente.cerrar(1001);
     if (cliente || (porPost && porPost.id !== id && ahora - porPost.visto < SIN_SENAL)) {
       res.writeHead(409).end();
       return;
@@ -442,6 +461,7 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
   function cerrar() {
     cerrando = true;
     clearInterval(revisar);
+    clearInterval(latido);
     if (cliente) cliente.cerrar(4001);
     if (ayudante) ayudante.kill();
     seguro.close();
