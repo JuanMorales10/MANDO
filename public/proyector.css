@@ -14,7 +14,7 @@
 
 .pro__escena {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 24vw, 460px);
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 520px);
   gap: clamp(20px, 2.2vw, 44px);
   align-items: center;
   height: 100vh;
@@ -31,10 +31,16 @@
 .pro__lado {
   display: flex;
   flex-direction: column;
-  gap: clamp(14px, 2.6vh, 32px);
+  gap: clamp(12px, 2.2vh, 28px);
+  min-width: 0;
   min-height: 0;
   max-height: 100%;
+  /* Si la pantalla es baja, la columna se desplaza en vez de cortar el código. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
+.pro__lado::-webkit-scrollbar { display: none; }
 
 .pro__marca {
   margin: 0 0 1vh;
@@ -62,6 +68,8 @@
   border: 1px solid var(--m-borde);
   box-shadow: var(--m-interior);
   text-align: center;
+  container-type: inline-size;
+  min-width: 0;
 }
 .pro__qr-hint {
   margin: 0 0 1.2vh;
@@ -73,7 +81,7 @@
 }
 .pro__qr {
   display: block;
-  width: min(100%, 300px, 32vh);
+  width: min(100%, 300px, 30vh);
   height: auto;
   aspect-ratio: 1;
   margin: 0 auto 1.6vh;
@@ -100,11 +108,14 @@
 }
 
 .pro__codigo {
-  display: flex;
-  justify-content: center;
-  gap: clamp(8px, 0.7vw, 14px);
-  margin: 0.4vh 0 0;
-  font-size: clamp(34px, 3.4vw, 64px);
+  /* Una casilla por carácter: 4 en la red local, 6 en la nube. Siempre entran en el ancho. */
+  display: grid;
+  grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
+  gap: clamp(4px, 2cqi, 12px);
+  width: 100%;
+  max-width: calc(var(--n, 4) * 5.2rem);
+  margin: 0.4vh auto 0;
+  font-size: clamp(22px, calc(64cqi / var(--n, 4)), 64px);
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -113,8 +124,8 @@
 .pro__digito {
   display: grid;
   place-items: center;
-  width: 1.45em;
-  height: 1.7em;
+  min-width: 0;
+  aspect-ratio: 0.85;
   border-radius: var(--m-radio-sm);
   border: 3px solid var(--m-primario);
   background: var(--m-primario-suave);
@@ -194,9 +205,11 @@
   .pro__aviso { transition: none; }
 }
 
-@media (max-aspect-ratio: 1/1) {
-  .pro { height: auto; overflow: auto; }
-  .pro__escena { grid-template-columns: 1fr; height: auto; }
+@media (max-aspect-ratio: 1/1), (max-width: 820px) {
+  .pro { height: auto; min-height: 100vh; overflow: auto; }
+  .pro__escena { grid-template-columns: 1fr; height: auto; align-items: start; }
+  .pro__lado { max-height: none; overflow: visible; max-width: 560px; width: 100%; margin: 0 auto; order: -1; }
+  .pro__qr { width: min(100%, 300px); }
 }
 
 .pro__puntero {
