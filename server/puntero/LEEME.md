@@ -18,14 +18,37 @@ Es el mismo servidor de `server/server.mjs` (misma sala, mismo código, mismos c
 En el teléfono: escanear el QR, aceptar el aviso del certificado (es propio, creado en
 la notebook), entrar al mando y tocar **🎯 Puntero** → **Activar puntero**.
 
+## Láser, dibujo y energía
+
+Desde la página del puntero, además de mover y hacer clic:
+
+- **Puntero láser**: un punto rojo grande que sigue al cursor por encima de todo lo que
+  se ve en la Mac, para presentar.
+- **Dibujar**: mientras se mantiene apretado el botón, el cursor deja un trazo rojo sobre
+  la pantalla. Otro botón borra todos los trazos.
+- **Energía**: bloquear la pantalla y suspender la Mac, siempre manteniendo apretado
+  para confirmar. **Apagar viene deshabilitado**: solo aparece si se arranca con
+  `PUNTERO_APAGAR=si node server/con-puntero.mjs`.
+
+Si el teléfono se desconecta, el láser se apaga y los trazos se borran solos. El láser
+y el dibujo necesitan el ayudante de Swift; con el plan B (osascript) el servidor le
+avisa al teléfono que no hay láser y «bloquear» apaga la pantalla en vez de trabar la
+sesión.
+
+Ojo: **cualquiera que tenga el código de la sala puede bloquear o suspender la compu**
+(y apagarla, si se habilitó). Como mucho se acepta una orden de energía cada 5 segundos.
+
 ## Cómo se suma sin tocar lo existente
 
 - `server/puntero/puntero.mjs` atiende las mismas páginas y la misma API reenviando cada
   pedido al servidor de siempre. A `celular.html` y `proyector.html` les agrega una
   etiqueta `<script>` al servirlas (`public/puntero/extra-*.js`); los archivos no cambian.
-- `server/puntero/cursor.swift` mueve el cursor y hace clic. Se compila sola la primera
-  vez (necesita las Command Line Tools de Xcode). Solo macOS; en otro sistema el
-  puntero queda apagado y todo lo demás funciona igual.
+- `server/puntero/cursor.swift` mueve el cursor, hace clic y dibuja el láser y los trazos.
+  Se compila sola la primera vez y cada vez que el archivo cambia (necesita las Command
+  Line Tools de Xcode). Solo macOS; en otro sistema el puntero queda apagado y todo lo
+  demás funciona igual.
+- `server/puntero/ordenes.mjs` es la lista cerrada de órdenes que acepta el servidor,
+  separada para poder probarla sola (`tests/puntero.test.mjs`).
 - `server/puntero/vendor/qrcode/` es el generador de QR (licencia MIT), copiado para
   seguir sin dependencias de npm.
 
@@ -34,8 +57,10 @@ la notebook), entrar al mando y tocar **🎯 Puntero** → **Activar puntero**.
 - Mismo código de 4 dígitos de la sala. Veinte códigos incorrectos desde un mismo
   teléfono lo bloquean 30 segundos.
 - Solo redes privadas, solo desde la propia página, un solo teléfono a la vez.
-- Lista cerrada de órdenes: mover, clic, clic derecho, centrar, rueda y siete teclas
-  fijas. Nunca se ejecuta un comando que llegue del teléfono.
+- Lista cerrada de órdenes: mover, clic, clic derecho, centrar, rueda, siete teclas
+  fijas, láser, dibujo, borrar y las órdenes de energía. Nunca se ejecuta un comando
+  que llegue del teléfono: los de energía son fijos (`pmset`, `osascript`), sin shell.
+- Apagar la compu solo existe con `PUNTERO_APAGAR=si`; sin eso, la orden se rechaza.
 - El QR y el código solo se le entregan a la propia notebook.
 
 ## Si los clics no andan
@@ -53,3 +78,7 @@ del teléfono, conectar la notebook a ese hotspot y volver a arrancar.
 
 `PORT` (8080), `PUERTO_HTTPS` (8443), `PUERTO_PANTALLA` (8090), y las mismas de
 `server.mjs`: `SALA`, `PASO_VOLUMEN`, `COMPUTADORA`, `PJLINK_HOST`.
+
+`PUNTERO_APAGAR=si` habilita apagar la compu desde el teléfono.
+`PUNTERO_ENERGIA_SIMULADA=1` sirve para probar: las órdenes de energía solo se anotan
+en el log, sin bloquear, suspender ni apagar nada.

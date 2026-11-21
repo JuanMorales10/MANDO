@@ -5,9 +5,9 @@
 //   - reutiliza el mismo código de 4 dígitos de la sala.
 // Sin dependencias de npm. Solo macOS (usa un ayudante en Swift para mover el cursor).
 
-import { spawn, execFileSync } from "node:child_process";
+import { spawn, execFile, execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import https from "node:https";
@@ -15,6 +15,7 @@ import { createRequire } from "node:module";
 import { networkInterfaces } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { energiasPermitidas, interpretar, planEnergia } from "./ordenes.mjs";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(AQUI, "..", "..", "public");
@@ -173,6 +174,7 @@ function aceptarWebSocket(req, socket) {
       else if (codigoOp === 0x1) ws.alMensaje(cuerpo.toString("utf8"));
     }
   });
+  socket.on("end", terminar); // el otro lado colgó sin despedirse (la puerta HTTP no cierra sola)
   socket.on("close", terminar);
   socket.on("error", terminar);
   return ws;
@@ -180,9 +182,20 @@ function aceptarWebSocket(req, socket) {
 
 // ---------- Puntero ----------
 
-const num = (n) => typeof n === "number" && Number.isFinite(n);
-const TECLAS = new Set(["izq", "der", "arr", "aba", "espacio", "esc", "enter"]);
 const SIN_SENAL = 6000;
+const ENTRE_ENERGIAS = 5000; // como mucho una orden de energía cada 5 segundos
+
+const fechaDe = (archivo) => {
+  try {
+    return statSync(archivo).mtimeMs;
+  } catch {
+    return 0;
+  }
+};
+
+// Ejecuta un comando fijo, sin shell. Devuelve si terminó bien.
+const correr = (comando, args) =>
+  new Promise((ok) => execFile(comando, args, { timeout: 10000 }, (error) => ok(!error)));
 
 /**
  * Suma el puntero y la puerta HTTPS a un servidor creado con crearServidor().
@@ -190,8 +203,17 @@ const SIN_SENAL = 6000;
  * @param {object} [opciones]
  * @param {number} [opciones.puertoHttps] puerta para los teléfonos (HTTPS).
  * @param {number} [opciones.puertoPantalla] puerta solo local para el proyector (HTTP).
+ * @param {(accion: string) => Promise<boolean>} [opciones.energia] quién ejecuta "bloquear",
+ *   "suspender" y "apagar". Si no se pasa, se usa el de verdad (pmset, osascript).
+ * @param {boolean} [opciones.apagar] habilita apagar la compu. Por defecto, solo con PUNTERO_APAGAR=si.
  */
-export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8090, log = () => {} } = {}) {
+export async function sumarPuntero(app, {
+  puertoHttps = 8443,
+  puertoPantalla = 8090,
+  log = () => {},
+  energia: ejecutorEnergia,
+  apagar = process.env.PUNTERO_APAGAR === "si",
+} = {}) {
   const ips = ipsLan();
   const urlCelular = () => (ips[0] ? `https://${ips[0]}:${puertoHttps}/celular.html?c=${app.sala.codigo}` : "");
 
@@ -201,11 +223,19 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
   // Ayudante: el de Swift si compila; si no, el plan B en JavaScript para macOS (sin compilar).
   let ayudanteComando = binario;
   let ayudanteArgs = [];
-  if (disponible && !existsSync(binario)) {
+  // Se compila si falta o si cursor.swift es más nuevo que el binario (quedó viejo).
+  const fuenteSwift = path.join(AQUI, "cursor.swift");
+  const hayBinario = existsSync(binario);
+  if (disponible && (!hayBinario || fechaDe(binario) < fechaDe(fuenteSwift))) {
+    const nuevo = `${binario}.nuevo`; // se compila aparte: si falla, no se pisa nada
     try {
-      log("compilando el ayudante del cursor (solo la primera vez)…");
-      execFileSync("swiftc", ["-O", path.join(AQUI, "cursor.swift"), "-o", binario], { stdio: "ignore" });
+      log(hayBinario
+        ? "cursor.swift cambió: recompilando el ayudante del cursor…"
+        : "compilando el ayudante del cursor (solo la primera vez)…");
+      execFileSync("swiftc", ["-O", fuenteSwift, "-o", nuevo], { stdio: "ignore" });
+      renameSync(nuevo, binario);
     } catch {
+      rmSync(nuevo, { force: true });
       log("no pude compilar el ayudante de Swift: uso el plan B (osascript), no hace falta Xcode");
       ayudanteComando = "osascript";
       ayudanteArgs = ["-l", "JavaScript", path.join(AQUI, "cursor-jxa.js")];
@@ -214,9 +244,15 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
 
   let ayudante = null;
   let clics = false;
+  let laser = false; // el ayudante en uso avisó «laser=si»: sabe dibujar el láser y los trazos
   let cerrando = false;
   let cliente = null; // teléfono conectado por WebSocket
   let porPost = null; // teléfono conectado por el camino de respaldo: { id, visto }
+
+  // Lo que el teléfono necesita saber para mostrar u ocultar botones.
+  const energias = energiasPermitidas({ apagar });
+  const capacidades = () => ({ clics, laser, energia: energias });
+  const hola = () => JSON.stringify({ t: "hola", ...capacidades() });
 
   function arrancarAyudante() {
     if (!disponible || cerrando) return;
@@ -224,20 +260,28 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
     ayudante.stdout.setEncoding("utf8");
     ayudante.stdout.on("data", (t) => {
       const antes = clics;
+      const antesLaser = laser;
       if (t.includes("accesibilidad=si")) clics = true;
       if (t.includes("accesibilidad=no")) clics = false;
+      if (t.includes("laser=si")) laser = true;
       if (clics !== antes) {
         log(clics ? "puntero: clics habilitados" : "puntero: clics deshabilitados (falta el permiso de Accesibilidad)");
-        if (cliente) cliente.enviar(JSON.stringify({ t: "hola", clics }));
       }
+      if (laser !== antesLaser) log("puntero: láser y dibujo disponibles");
+      if ((clics !== antes || laser !== antesLaser) && cliente) cliente.enviar(hola());
     });
     ayudante.on("exit", () => {
       ayudante = null;
+      laser = false; // el que arranque después lo vuelve a avisar
       if (!cerrando) setTimeout(arrancarAyudante, 300);
     });
   }
   const alCursor = (linea) => {
     if (ayudante && ayudante.stdin.writable) ayudante.stdin.write(`${linea}\n`);
+  };
+  // Sin teléfono no queda nada colgado en la pantalla: se corta el trazo, se apaga el láser y se borra.
+  const soltar = () => {
+    for (const linea of ["d 0", "l 0", "b"]) alCursor(linea);
   };
   arrancarAyudante();
   if (disponible) alCursor("pedir"); // macOS muestra su aviso para habilitar Accesibilidad
@@ -256,42 +300,70 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
     cliente.ping();
   }, 4000);
   latido.unref();
+  // Lo mismo para el camino de respaldo, que no tiene una conexión que se pueda cerrar.
+  const latidoPost = setInterval(() => {
+    if (!porPost || Date.now() - porPost.visto <= SIN_SENAL) return;
+    log("puntero: el teléfono (respaldo) dejó de responder; se libera el puntero");
+    porPost = null;
+    soltar();
+  }, 2000);
+  latidoPost.unref();
+
+  // ----- Energía: bloquear, suspender y (solo si se habilitó) apagar -----
+  if (apagar) log("puntero: apagar la compu desde el teléfono está HABILITADO (PUNTERO_APAGAR=si)");
+  const simulada = process.env.PUNTERO_ENERGIA_SIMULADA === "1";
+  if (simulada) log("puntero: energía SIMULADA (PUNTERO_ENERGIA_SIMULADA=1): las órdenes solo se anotan");
+  async function energiaDeVerdad(accion) {
+    const plan = planEnergia(accion, { clics, laser, apagar });
+    if (!plan) return false;
+    const detalle = plan.linea ? `«${plan.linea}» al ayudante` : `${plan.comando} ${plan.args.join(" ")}`;
+    if (simulada) {
+      log(`puntero: energía simulada, no se ejecuta nada (${accion}: ${detalle})`);
+      return true;
+    }
+    if (plan.linea) {
+      alCursor(plan.linea);
+      return true;
+    }
+    return correr(plan.comando, plan.args);
+  }
+  const ejecutarEnergia = typeof ejecutorEnergia === "function" ? ejecutorEnergia : energiaDeVerdad;
+
+  let ultimaEnergia = 0;
+  // Devuelve el acuse para el teléfono. Nunca falla: si algo sale mal, ok es false.
+  async function pedirEnergia({ energia: accion, permitida }) {
+    const acuse = (ok) => ({ t: "energia", n: accion, ok });
+    const ahora = Date.now();
+    if (ahora - ultimaEnergia < ENTRE_ENERGIAS) return acuse(false); // muy seguida
+    ultimaEnergia = ahora;
+    if (!permitida) {
+      log(`puntero: orden de energía rechazada (${accion} no está habilitado)`);
+      return acuse(false);
+    }
+    log(`puntero: orden de energía del teléfono: ${accion}`);
+    try {
+      return acuse((await ejecutarEnergia(accion)) === true);
+    } catch {
+      return acuse(false);
+    }
+  }
 
   // ----- Órdenes: lista cerrada, todo lo demás se ignora -----
   let ventana = Date.now();
   let cuenta = 0;
+  // Devuelve null, o la promesa del acuse si fue una orden de energía.
   function procesar(m) {
     const ahora = Date.now();
     if (ahora - ventana > 1000) {
       ventana = ahora;
       cuenta = 0;
     }
-    if (++cuenta > 240) return;
-    if (!m || typeof m !== "object" || Array.isArray(m)) return;
-    switch (m.t) {
-      case "m":
-        if (num(m.x) && num(m.y) && Math.abs(m.x) <= 400 && Math.abs(m.y) <= 400) {
-          alCursor(`m ${m.x.toFixed(2)} ${m.y.toFixed(2)}`);
-        }
-        break;
-      case "c":
-        alCursor("c");
-        break;
-      case "r":
-        alCursor("r");
-        break;
-      case "z":
-        alCursor("z");
-        break;
-      case "s":
-        if (num(m.y) && Math.abs(m.y) <= 300) alCursor(`s ${m.y.toFixed(1)}`);
-        break;
-      case "k":
-        if (typeof m.n === "string" && TECLAS.has(m.n)) alCursor(`k ${m.n}`);
-        break;
-      default:
-        break;
-    }
+    if (++cuenta > 240) return null;
+    const orden = interpretar(m, { apagar });
+    if (!orden) return null;
+    if (orden.energia) return pedirEnergia(orden);
+    alCursor(orden.linea);
+    return null;
   }
 
   // ----- Código de la sala, con freno a quien prueba muchos -----
@@ -330,7 +402,10 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
       return;
     }
     if (ruta === "/puntero/chau") {
-      if (porPost && porPost.id === id) porPost = null;
+      if (porPost && porPost.id === id) {
+        porPost = null;
+        soltar();
+      }
       res.writeHead(204).end();
       return;
     }
@@ -340,14 +415,17 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
       res.writeHead(409).end();
       return;
     }
-    if (!porPost || porPost.id !== id) log(`puntero: teléfono conectado (${limpiarIp(req.socket.remoteAddress)}, respaldo)`);
+    if (!porPost || porPost.id !== id) {
+      if (porPost) soltar(); // reemplaza a otro teléfono que dejó de responder
+      log(`puntero: teléfono conectado (${limpiarIp(req.socket.remoteAddress)}, respaldo)`);
+    }
     porPost = { id, visto: ahora };
     let cuerpo = "";
     req.on("data", (c) => {
       cuerpo += c;
       if (cuerpo.length > 4096) req.destroy();
     });
-    req.on("end", () => {
+    req.on("end", async () => {
       let lista;
       try {
         lista = JSON.parse(cuerpo);
@@ -358,9 +436,10 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
         res.writeHead(400).end();
         return;
       }
-      for (const m of lista) procesar(m);
+      // Por acá no hay cómo avisar después: el acuse de energía viaja en la misma respuesta.
+      const acuses = (await Promise.all(lista.map((m) => procesar(m)))).filter(Boolean);
       res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-      res.end(JSON.stringify({ clics }));
+      res.end(JSON.stringify({ ...capacidades(), ...(acuses.length ? { acuses } : {}) }));
     });
   }
 
@@ -426,12 +505,14 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
     // Un solo teléfono maneja el cursor: el nuevo reemplaza al anterior.
     if (cliente) cliente.cerrar(4000);
     cliente = ws;
+    if (porPost) soltar();
     porPost = null;
     log(`puntero: teléfono conectado (${limpiarIp(req.socket.remoteAddress)})`);
-    ws.enviar(JSON.stringify({ t: "hola", clics }));
+    ws.enviar(hola());
     ws.alMensaje = (texto) => {
       try {
-        procesar(JSON.parse(texto));
+        const acuse = procesar(JSON.parse(texto));
+        if (acuse) acuse.then((a) => ws.enviar(JSON.stringify(a)));
       } catch {
         // mensaje raro: se ignora
       }
@@ -439,6 +520,7 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
     ws.alCerrar = () => {
       if (cliente === ws) {
         cliente = null;
+        soltar();
         log("puntero: teléfono desconectado");
       }
     };
@@ -462,6 +544,7 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
     cerrando = true;
     clearInterval(revisar);
     clearInterval(latido);
+    clearInterval(latidoPost);
     if (cliente) cliente.cerrar(4001);
     if (ayudante) ayudante.kill();
     seguro.close();
