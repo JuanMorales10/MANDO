@@ -193,13 +193,17 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
   // ----- Ayudante que mueve el cursor -----
   const binario = path.join(AQUI, "cursor");
   let disponible = process.platform === "darwin";
+  // Ayudante: el de Swift si compila; si no, el plan B en JavaScript para macOS (sin compilar).
+  let ayudanteComando = binario;
+  let ayudanteArgs = [];
   if (disponible && !existsSync(binario)) {
     try {
       log("compilando el ayudante del cursor (solo la primera vez)…");
-      execFileSync("swiftc", ["-O", path.join(AQUI, "cursor.swift"), "-o", binario], { stdio: "inherit" });
+      execFileSync("swiftc", ["-O", path.join(AQUI, "cursor.swift"), "-o", binario], { stdio: "ignore" });
     } catch {
-      disponible = false;
-      log("no pude compilar el ayudante del cursor: el puntero queda apagado");
+      log("no pude compilar el ayudante de Swift: uso el plan B (osascript), no hace falta Xcode");
+      ayudanteComando = "osascript";
+      ayudanteArgs = ["-l", "JavaScript", path.join(AQUI, "cursor-jxa.js")];
     }
   }
 
@@ -211,7 +215,7 @@ export async function sumarPuntero(app, { puertoHttps = 8443, puertoPantalla = 8
 
   function arrancarAyudante() {
     if (!disponible || cerrando) return;
-    ayudante = spawn(binario, [], { stdio: ["pipe", "pipe", "inherit"] });
+    ayudante = spawn(ayudanteComando, ayudanteArgs, { stdio: ["pipe", "pipe", "inherit"] });
     ayudante.stdout.setEncoding("utf8");
     ayudante.stdout.on("data", (t) => {
       const antes = clics;
