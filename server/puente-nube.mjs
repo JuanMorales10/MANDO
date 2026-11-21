@@ -19,7 +19,7 @@ export function nuevaSala(largo = 6) {
  * @param {string} o.sala  código de 6 caracteres.
  * @param {() => Array} o.conectores  resumen de aparatos para mostrar en la pantalla.
  */
-export function unirAgente(app, { sala, conectores = () => [], log = () => {} }) {
+export function unirAgente(app, { sala, conectores = () => [], puntero = () => null, log = () => {} }) {
   const tema = `${PREFIJO}${sala}`;
   const de = `agente-${randomBytes(4).toString("hex")}`;
   let cortado = false;
@@ -30,7 +30,8 @@ export function unirAgente(app, { sala, conectores = () => [], log = () => {} })
       log(`puente: no pude publicar (${e.message})`),
     );
   const presentarse = () => {
-    publicar({ t: "agente", conectores: conectores() });
+    // Si la compu tiene puntero, el celular recibe el enlace (necesita el mismo wifi).
+    publicar({ t: "agente", conectores: conectores(), puntero: puntero() });
     publicar({ t: "estado", state: app.sala.state, origen: "agente" });
   };
 
