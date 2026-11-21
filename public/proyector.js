@@ -1,8 +1,9 @@
 // Pantalla del proyector: TV simulada en vivo, código para unirse y aparatos conectados.
 
 import { renderTV } from "./tv.js";
-import { initialState } from "./tv-state.js";
-import { nombreDe } from "./mando-botones.js";
+import { initialState, applyAction } from "./tv-state.js";
+import { nombreDe, ACCIONES } from "./mando-botones.js";
+import { nuevaSala, normalizarSala, unirseASala } from "./puente.js";
 
 
 const $ = (id) => document.getElementById(id);
@@ -47,40 +48,77 @@ function qrSrc(data) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=8&data=${encodeURIComponent(data)}`;
 }
 
-// El código, el QR y la dirección los entrega el servidor a la notebook.
-try {
-  const res = await fetch("/api/info");
-  if (res.ok) {
-    const info = await res.json();
-    const joinUrl = info.urls?.[0];
-    $("codigo").replaceChildren(...String(info.codigo).split("").map((d) => {
-      const casilla = document.createElement("span");
-      casilla.className = "pro__digito";
-      casilla.textContent = d;
-      return casilla;
-    }));
-    $("codigo").setAttribute("aria-label", `Código ${info.codigo}`);
-    $("url").textContent = joinUrl?.replace(/^https?:\/\//, "").replace(/\?.*$/, "") || "Sin red: conectá la notebook al wifi";
-    const qr = $("qr");
-    if (qr && joinUrl) {
-      qr.hidden = false;
-      qr.src = qrSrc(joinUrl);
-      qr.alt = `QR para abrir ${joinUrl}`;
-    }
-    $("unirse").hidden = false;
-    ultimaVista = info.ultima?.hora || 0;
-    aplicar(info);
+function mostrarCodigo(codigo, direccion, joinUrl) {
+  $("codigo").replaceChildren(...String(codigo).split("").map((d) => {
+    const casilla = document.createElement("span");
+    casilla.className = "pro__digito";
+    casilla.textContent = d;
+    return casilla;
+  }));
+  $("codigo").setAttribute("aria-label", `Código ${codigo}`);
+  $("url").textContent = direccion;
+  const qr = $("qr");
+  if (qr && joinUrl) {
+    qr.hidden = false;
+    qr.src = qrSrc(joinUrl);
+    qr.alt = `QR para abrir ${joinUrl}`;
   }
-} catch {
-  $("aviso").textContent = "Abrí esta página desde el servidor: npm run sala";
-  $("aviso").classList.add("is-visible");
+  $("unirse").hidden = false;
 }
 
-const eventos = new EventSource("/api/eventos");
-eventos.onmessage = (mensaje) => {
-  try {
-    aplicar(JSON.parse(mensaje.data));
-  } catch {
-    // Mensaje incompleto: esperamos el próximo.
-  }
-};
+// Modo local: la notebook corre el servidor (npm run sala / MANDO.command) y entrega código, QR y estado.
+async function modoLocal() {
+  const res = await fetch("/api/info");
+  if (!res.ok) throw new Error("sin servidor local");
+  const info = await res.json();
+  const joinUrl = info.urls?.[0];
+  mostrarCodigo(info.codigo, joinUrl?.replace(/^https?:\/\//, "").replace(/\?.*$/, "") || "Sin red: conectá la notebook al wifi", joinUrl);
+  ultimaVista = info.ultima?.hora || 0;
+  aplicar(info);
+  const eventos = new EventSource("/api/eventos");
+  eventos.onmessage = (mensaje) => {
+    try {
+      aplicar(JSON.parse(mensaje.data));
+    } catch {
+      // Mensaje incompleto: esperamos el próximo.
+    }
+  };
+}
+
+// Modo nube: abierta desde la app publicada. La pantalla crea una sala y es la tele;
+// el celular entra con el QR desde cualquier red. Si MANDO.command está abierto en la notebook,
+// se suma a la misma sala y los botones actúan de verdad en la compu.
+function modoNube() {
+  const params = new URLSearchParams(location.search);
+  const sala = normalizarSala(params.get("sala") || "") || nuevaSala();
+  if (params.get("sala") !== sala) history.replaceState(null, "", `${location.pathname}?sala=${sala}`);
+  const joinUrl = `${location.origin}/celular?sala=${sala}`;
+  mostrarCodigo(sala, `${location.host}/celular`, joinUrl);
+
+  let state = initialState;
+  let conectores = [];
+  let conAgente = false;
+  const pintar = (ultima) => aplicar({ state, conectores, ultima });
+  pintar();
+
+  const canal = unirseASala(sala, (m) => {
+    if (m.t === "hola") canal.enviar({ t: "estado", state, origen: conAgente ? "agente" : "pantalla" });
+    else if (m.t === "agente") {
+      conAgente = true;
+      conectores = Array.isArray(m.conectores) ? m.conectores : [];
+      pintar();
+    } else if (m.t === "estado" && m.origen === "agente" && m.state) {
+      state = m.state;
+      pintar();
+    } else if (m.t === "acciones" && Array.isArray(m.a)) {
+      const validas = m.a.filter((a) => ACCIONES.includes(a)).slice(0, 20);
+      for (const a of validas) state = applyAction(state, a);
+      if (validas.length) pintar({ accion: validas.at(-1), origen: "celular", hora: Date.now() });
+    }
+  });
+  canal.enviar({ t: "hola" }); // por si la notebook ya está en la sala
+}
+
+const forzarNube = new URLSearchParams(location.search).has("sala");
+if (forzarNube) modoNube();
+else modoLocal().catch(modoNube);

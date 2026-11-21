@@ -1,7 +1,9 @@
 // MANDO en el celular: onboarding, mando completo configurable y guía por sectores.
 // Cada botón manda su acción al servidor de la notebook, que la aplica a los aparatos reales.
 
-import { BOTONES, SECCIONES, BOTON, FAVORITOS_INICIALES, nombreDe } from "./mando-botones.js";
+import { BOTONES, SECCIONES, BOTON, FAVORITOS_INICIALES, nombreDe, ACCIONES } from "./mando-botones.js";
+import { applyAction, initialState } from "./tv-state.js";
+import { unirseASala, normalizarSala, esSalaNube } from "./puente.js";
 
 const CLAVE_CONFIG = "mando-celular-v1";
 const CLAVE_CODIGO = "mando-sala";
@@ -165,9 +167,70 @@ async function post(ruta, cuerpo) {
   return datos;
 }
 
+// ---------- Modo nube: la sala vive en el puente, sin IP ni mismo wifi ----------
+
+const nube = { canal: null, state: initialState, conectores: [], cola: [], timer: 0, deAgente: false };
+
+function mostrarNube() {
+  mostrarEstado({ state: nube.state, conectores: nube.conectores });
+}
+
+function enviarNube(accion) {
+  // Se ve al instante en el celular; los toques seguidos viajan juntos para no saturar el puente.
+  nube.state = applyAction(nube.state, accion);
+  mostrarNube();
+  nube.cola.push(accion);
+  clearTimeout(nube.timer);
+  nube.timer = setTimeout(() => {
+    const a = nube.cola.splice(0, 20);
+    nube.canal?.enviar({ t: "acciones", a }).catch(() => {
+      $("error").textContent = "Sin conexión con la pantalla. Revisá internet.";
+    });
+  }, 120);
+}
+
+function conectarNube(sala) {
+  return new Promise((resolve, reject) => {
+    nube.canal?.cerrar();
+    let listo = false;
+    const plazo = setTimeout(() => {
+      if (!listo) reject(Object.assign(new Error("sin pantalla"), { status: 404 }));
+    }, 5000);
+    nube.canal = unirseASala(
+      sala,
+      (m) => {
+        if (m.t === "estado" && m.state) {
+          // Si la notebook está en la sala, su estado (volumen real) manda.
+          if (m.origen === "agente") nube.deAgente = true;
+          else if (nube.deAgente) return;
+          nube.state = m.state;
+          mostrarNube();
+          if (!listo) {
+            listo = true;
+            clearTimeout(plazo);
+            resolve();
+          }
+        } else if (m.t === "agente") {
+          nube.conectores = Array.isArray(m.conectores) ? m.conectores : [];
+          mostrarNube();
+        } else if (m.t === "acciones" && Array.isArray(m.a)) {
+          // Otro celular tocó algo: lo reflejamos acá también.
+          for (const a of m.a) if (ACCIONES.includes(a)) nube.state = applyAction(nube.state, a);
+          mostrarNube();
+        }
+      },
+      (on) => {
+        marcarConexion(on);
+        if (on && !listo) nube.canal.enviar({ t: "hola" }).catch(() => {});
+      },
+    );
+  });
+}
+
 async function enviar(accion) {
   $("error").textContent = "";
   navigator.vibrate?.(12);
+  if (nube.canal) return enviarNube(accion);
   try {
     await post("/api/accion", { codigo, accion });
   } catch (error) {
@@ -569,6 +632,20 @@ function pantallaCodigo(motivo = "") {
 
 async function conectar(valor) {
   $("error-codigo").textContent = "";
+  if (esSalaNube(valor)) {
+    const sala = normalizarSala(valor);
+    try {
+      await conectarNube(sala);
+      codigo = sala;
+      guardado.escribir(CLAVE_CODIGO, sala, sessionStorage);
+      abrirMando();
+    } catch {
+      nube.canal?.cerrar();
+      nube.canal = null;
+      pantallaCodigo("No encuentro esa pantalla. Revisá el código o que la pantalla siga abierta.");
+    }
+    return;
+  }
   try {
     const datos = await post("/api/entrar", { codigo: valor });
     codigo = valor;
@@ -771,7 +848,8 @@ $("ver-tour").addEventListener("click", () => recorrido.repetir());
 
 // ---------- Arranque ----------
 
-const codigoInicial = new URLSearchParams(location.search).get("c") || guardado.leer(CLAVE_CODIGO, sessionStorage);
+const parametros = new URLSearchParams(location.search);
+const codigoInicial = parametros.get("sala") || parametros.get("c") || guardado.leer(CLAVE_CODIGO, sessionStorage);
 if (codigoInicial) {
   $("codigo").value = codigoInicial;
   conectar(codigoInicial); // entró por el QR: directo al mando

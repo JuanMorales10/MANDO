@@ -1,52 +1,101 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#07080d" />
-    <meta
-      name="description"
-      content="MANDO — Tu control, a tu manera. Configurá el mando y controlá canales de video."
-    />
-    <title>MANDO · Tu control, a tu manera</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://interactive-examples.mdn.mozilla.net" />
-    <link rel="preconnect" href="https://samplelib.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./identidad.css" />
-    <link rel="stylesheet" href="./tv.css" />
-    <link rel="stylesheet" href="./remote.css" />
-    <link rel="stylesheet" href="./demo.css" />
-  </head>
-  <body>
-    <a class="mando-skip" href="#remote-root">Ir al mando</a>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07080d" />
+  <meta name="description" content="MANDO — Tu control, a tu manera. Usá tu celular como un mando universal que armás a tu gusto." />
+  <title>MANDO · Tu control, a tu manera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="./tema.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: radial-gradient(1200px 600px at 50% -10%, #1d1840 0%, transparent 60%), var(--m-fondo);
+      color: var(--m-texto);
+      font-family: var(--m-fuente);
+      display: grid;
+      place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    }
+    .portada { width: 100%; max-width: 980px; display: grid; gap: clamp(24px, 4vw, 40px); }
+    .portada__cabeza { text-align: center; display: grid; gap: 10px; }
+    .portada__marca {
+      margin: 0; font-weight: 800; letter-spacing: 0.08em;
+      font-size: clamp(2.6rem, 8vw, 4.6rem);
+      background: var(--m-degradado); -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .portada__lema { margin: 0; font-size: clamp(1.05rem, 2.4vw, 1.35rem); color: var(--m-texto-2); }
+    .portada__pregunta { margin: 0; text-align: center; font-size: clamp(1.2rem, 3vw, 1.6rem); font-weight: 800; }
+    .opciones { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .opcion {
+      display: grid; gap: 10px; align-content: start;
+      padding: 22px; min-height: 180px;
+      border-radius: var(--m-radio-lg);
+      border: 1px solid var(--m-borde);
+      background: var(--m-superficie);
+      box-shadow: var(--m-interior);
+      color: inherit; text-decoration: none;
+      transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .opcion:hover, .opcion:focus-visible { border-color: var(--m-primario); box-shadow: var(--m-brillo); transform: translateY(-2px); outline: none; }
+    .opcion:active { transform: scale(0.98); }
+    .opcion--principal { background: linear-gradient(160deg, #2a2266 0%, var(--m-superficie) 70%); border-color: rgba(108, 92, 255, 0.55); }
+    .opcion__icono {
+      width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center;
+      background: var(--m-primario-suave); color: var(--m-texto-primario);
+    }
+    .opcion__icono svg { width: 30px; height: 30px; }
+    .opcion strong { font-size: 1.3rem; font-weight: 800; }
+    .opcion span { color: var(--m-texto-2); line-height: 1.45; }
+    .pasos {
+      margin: 0; padding: 16px 18px; list-style: none;
+      display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      border-radius: var(--m-radio); border: 1px solid var(--m-borde); background: rgba(18, 20, 28, 0.6);
+    }
+    .pasos li { display: flex; gap: 10px; align-items: baseline; color: var(--m-texto-2); }
+    .pasos b {
+      flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--m-degradado); color: #fff; font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="portada">
+    <header class="portada__cabeza">
+      <h1 class="portada__marca">MANDO</h1>
+      <p class="portada__lema">El control que se adapta a vos. Tu celular, un mando universal armado a tu gusto.</p>
+    </header>
 
-    <div class="mando-demo">
-      <header class="mando-demo__brand">
-        <p class="mando-demo__wordmark">MANDO</p>
-        <p class="mando-demo__tagline">Tu control, a tu manera</p>
-      </header>
+    <p class="portada__pregunta">¿Qué es este dispositivo?</p>
 
-      <section class="mando-demo__stage" aria-label="TV simulada">
-        <div id="tv-root"></div>
-        <p class="mando-demo__coach">
-          Usá Canal +/− para cambiar de video. Editar → mové Silencio → Usar →
-          tocá.
-        </p>
-      </section>
+    <nav class="opciones" aria-label="Elegí cómo usar MANDO">
+      <a class="opcion opcion--principal" href="./celular">
+        <span class="opcion__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="3"/><path d="M11 18.5h2"/></svg></span>
+        <strong>Mi mando</strong>
+        <span>Usá este celular como control. Escaneá el QR de la pantalla o escribí su código.</span>
+      </a>
+      <a class="opcion" href="./proyector">
+        <span class="opcion__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 20.5h8M12 17v3.5"/></svg></span>
+        <strong>Esta pantalla es la tele</strong>
+        <span>Abrila en la compu del proyector o la tele. Muestra un QR para que cualquiera la controle.</span>
+      </a>
+      <a class="opcion" href="./demo">
+        <span class="opcion__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5v14l11-7z"/></svg></span>
+        <strong>Probar todo acá</strong>
+        <span>Mando y tele en esta misma pantalla, sin otro dispositivo.</span>
+      </a>
+    </nav>
 
-      <section class="mando-demo__remote" aria-label="Mando">
-        <div id="remote-root"></div>
-      </section>
-    </div>
-
-    <script type="module" src="./app.js"></script>
-  </body>
+    <ol class="pasos" aria-label="Cómo funciona">
+      <li><b>1</b>Abrí «Esta pantalla es la tele» en la compu del proyector.</li>
+      <li><b>2</b>Escaneá el QR con el celular: entrás directo, desde cualquier red.</li>
+      <li><b>3</b>Elegí tu estilo, armá tus botones y controlá.</li>
+    </ol>
+  </main>
+</body>
 </html>

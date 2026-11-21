@@ -36,6 +36,18 @@ const app = crearServidor({
 for (const c of conectores) await c.iniciar?.(app);
 
 const puntero = await sumarPuntero(app, { puertoHttps, puertoPantalla, log });
+
+// Sala en la nube: la pantalla publicada (mando-psi.vercel.app/proyector?sala=…) y el celular
+// se encuentran ahí desde cualquier red; la notebook se suma para que los botones actúen de verdad.
+let nube = null;
+if (process.env.SALA_NUBE !== "no") {
+  const { unirAgente, nuevaSala } = await import("./puente-nube.mjs");
+  nube = unirAgente(app, {
+    sala: (process.env.SALA_NUBE || nuevaSala()).toUpperCase(),
+    conectores: () => conectores.map((c) => ({ nombre: c.nombre === "Computadora" ? "La notebook" : c.nombre, ...c.estado() })),
+    log,
+  });
+}
 // El mando del celular (entrada normal, sin aviso de certificado) ofrece el puntero con un botón.
 if (puntero.disponible) app.extras.punteroPuerto = puertoHttps;
 
@@ -45,6 +57,7 @@ app.server.listen(puerto, "0.0.0.0", () => {
   console.log(`Celular:            ${puntero.urlCelular() || "sin red: conectá la notebook al wifi"}`);
   for (const ip of direccionesLan()) console.log(`Celular sin puntero: http://${ip}:${puerto}/celular.html`);
   console.log(`Código:             ${app.sala.codigo}`);
+  if (nube) console.log(`App publicada:      ${process.env.MANDO_URL || "https://mando-psi.vercel.app"}/proyector?sala=${nube.sala}`);
   console.log(`Conectores:         ${conectores.map((c) => c.nombre).join(", ") || "ninguno (solo TV simulada)"}`);
   console.log(`Puntero:            ${puntero.disponible ? "disponible" : "no disponible en este sistema"}`);
   console.log("El teléfono avisa que el certificado no es de confianza: Avanzado → Continuar.\n");
@@ -52,6 +65,7 @@ app.server.listen(puerto, "0.0.0.0", () => {
 
 const cortar = () => {
   puntero.cerrar();
+  nube?.cerrar();
   app.server.close();
   process.exit(0);
 };

@@ -1,6 +1,6 @@
 #!/bin/bash
 # MANDO · doble clic para arrancar todo en la notebook del proyector.
-# Levanta el servidor con puntero (npm run sala:puntero) y abre la pantalla del proyector con el QR.
+# Levanta el servidor (mando, puntero y sala en la nube) y abre la pantalla de la app publicada con el QR.
 # Funciona aunque la Mac no tenga Node: usa el que traen Cursor o VS Code.
 
 cd "$(dirname "$0")" || exit 1
@@ -20,11 +20,16 @@ else
 fi
 
 PUERTO="${PUERTO_PANTALLA:-8090}"
+MANDO_URL="${MANDO_URL:-https://mando-psi.vercel.app}"
+# Sala en la nube: el celular entra desde la app publicada, desde cualquier red.
+SALA_NUBE="${SALA_NUBE:-$(LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' </dev/urandom | head -c 6)}"
+export SALA_NUBE MANDO_URL
 # Abre la pantalla del proyector cuando el servidor ya está escuchando.
 (
   for _ in $(seq 1 40); do
     if curl -s -o /dev/null "http://localhost:${PUERTO}/proyector.html"; then
-      open "http://localhost:${PUERTO}/proyector.html"
+      # La pantalla se abre desde la app publicada, en la misma sala que la notebook.
+      open "${MANDO_URL}/proyector?sala=${SALA_NUBE}"
       exit 0
     fi
     sleep 0.25
