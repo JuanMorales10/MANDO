@@ -193,6 +193,16 @@ svg { display: block; width: 100%; height: 100%; }
 
 .app__barra { display: flex; align-items: center; gap: 10px; min-height: 48px; }
 .app__marca { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.2em; color: var(--m-texto-primario); margin-right: auto; }
+.app__puntero {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 52px; padding: 0 16px; border-radius: var(--m-radio);
+  background: var(--m-primario-suave); border: 1px solid rgba(108, 92, 255, 0.4);
+  color: var(--m-texto-primario); text-decoration: none; font-size: 0.95rem;
+}
+.app__puntero strong { color: var(--m-texto); margin-right: 6px; }
+.app__puntero svg { width: 20px; height: 20px; flex: none; color: var(--m-cian); }
+.app__puntero[hidden] { display: none; }
+.app__ayuda, .app__conexion { flex-shrink: 0; }
 .app__ayuda {
   width: 48px; height: 48px; padding: 12px; border-radius: 50%;
   border: 1px solid var(--m-borde); background: var(--m-superficie); box-shadow: var(--m-interior);
@@ -461,3 +471,4 @@ svg { display: block; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+.cel[data-modo="editar"] .app__puntero { display: none; }

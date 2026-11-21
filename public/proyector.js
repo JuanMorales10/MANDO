@@ -60,7 +60,7 @@ try {
       return casilla;
     }));
     $("codigo").setAttribute("aria-label", `Código ${info.codigo}`);
-    $("url").textContent = joinUrl?.replace(/^https?:\/\//, "") || "Sin red: conectá la notebook al wifi";
+    $("url").textContent = joinUrl?.replace(/^https?:\/\//, "").replace(/\?.*$/, "") || "Sin red: conectá la notebook al wifi";
     const qr = $("qr");
     if (qr && joinUrl) {
       qr.hidden = false;

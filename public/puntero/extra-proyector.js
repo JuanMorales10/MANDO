@@ -1,43 +1,22 @@
-// Agregado para la pantalla del proyector: muestra un QR para entrar desde el teléfono.
-// Lo inserta el servidor con puntero; proyector.html y proyector.js no se modifican.
+// Agregado para la pantalla del proyector cuando corre el servidor con puntero.
+// No agrega otro QR: el de la página es el único (entra sin aviso de certificado).
+// Solo avisa que, desde el mando, el celular también puede mover el cursor.
 
-async function ponerQr() {
-  let info;
+async function avisarPuntero() {
   try {
     const res = await fetch("/puntero/info");
     if (!res.ok) return;
-    info = await res.json();
+    const info = await res.json();
+    if (!info.puntero) return;
   } catch {
     return;
   }
-  if (!info.url) return;
   const unirse = document.getElementById("unirse");
-  const url = document.getElementById("url");
-  if (!unirse || !url) return;
-
-  const caja = document.createElement("div");
-  caja.style.cssText =
-    "width:min(100%,260px);aspect-ratio:1;margin:0.6rem 0;padding:10px;background:#fff;border-radius:16px;";
-  const img = new Image();
-  img.alt = "Código QR para abrir el mando en el teléfono";
-  img.style.cssText = "display:block;width:100%;height:100%;";
-  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(info.qr)}`;
-  caja.append(img);
-
-  const pista = document.createElement("p");
-  pista.textContent = "Escaneá con la cámara del teléfono";
-  pista.style.cssText = "margin:0 0 0.4rem;font-weight:700;";
-
-  unirse.insertBefore(pista, url);
-  unirse.insertBefore(caja, url);
-
-  // La dirección escrita pasa a ser la segura, que es la que habilita el puntero.
-  const corta = info.url.replace(/^https:\/\//, "").replace(/\?.*$/, "");
-  const fijar = () => {
-    if (url.textContent !== corta) url.textContent = corta;
-  };
-  fijar();
-  new MutationObserver(fijar).observe(url, { childList: true, characterData: true, subtree: true });
+  if (!unirse) return;
+  const nota = document.createElement("p");
+  nota.className = "pro__puntero";
+  nota.textContent = "También: tocá «Puntero» en el mando y mové el celular para mover el cursor.";
+  unirse.append(nota);
 }
 
-ponerQr();
+avisarPuntero();
