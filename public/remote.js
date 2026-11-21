@@ -184,12 +184,14 @@ export function mountRemote(el, dispatch) {
   useBtn.className = "mando-remote__mode is-active";
   useBtn.dataset.mode = "usar";
   useBtn.textContent = "Usar";
+  useBtn.setAttribute("aria-pressed", "true");
 
   const editBtn = document.createElement("button");
   editBtn.type = "button";
   editBtn.className = "mando-remote__mode";
   editBtn.dataset.mode = "editar";
   editBtn.textContent = "Editar";
+  editBtn.setAttribute("aria-pressed", "false");
 
   modes.append(useBtn, editBtn);
   header.append(title, modes);
@@ -204,13 +206,15 @@ export function mountRemote(el, dispatch) {
   sizeNormal.type = "button";
   sizeNormal.className = "mando-remote__tool";
   sizeNormal.dataset.size = "normal";
-  sizeNormal.textContent = "Tamaño normal";
+  sizeNormal.textContent = "Normal";
+  sizeNormal.setAttribute("aria-label", "Tamaño normal");
 
   const sizeLarge = document.createElement("button");
   sizeLarge.type = "button";
   sizeLarge.className = "mando-remote__tool";
   sizeLarge.dataset.size = "large";
-  sizeLarge.textContent = "Tamaño grande";
+  sizeLarge.textContent = "Grande";
+  sizeLarge.setAttribute("aria-label", "Tamaño grande");
 
   toolbar.append(sizeNormal, sizeLarge);
 
@@ -269,16 +273,18 @@ export function mountRemote(el, dispatch) {
     el.classList.toggle("is-use", !isEdit);
     useBtn.classList.toggle("is-active", !isEdit);
     editBtn.classList.toggle("is-active", isEdit);
+    useBtn.setAttribute("aria-pressed", String(!isEdit));
+    editBtn.setAttribute("aria-pressed", String(isEdit));
     if (isEdit) {
       setHint(
         state.selectedId
-          ? "Arrastrá el botón o tocá una casilla vacía. Cambiá el tamaño abajo."
-          : "Arrastrá Silencio, o seleccioná un botón y tocá su casilla destino.",
+          ? "Arrastrá o tocá una casilla vacía."
+          : "Elegí un botón y movelo.",
         true,
       );
     } else {
       state.selectedId = null;
-      setHint("Tocá un botón para controlar la TV.");
+      setHint("Tocá para controlar la TV.");
     }
   }
 
@@ -336,12 +342,12 @@ export function mountRemote(el, dispatch) {
     if (!current || current.size === size) return;
     const fitted = nearestFreeCell(state.layout, id, current.row, current.col, size);
     if (!fitted) {
-      setHint("No hay espacio para ese tamaño. Mové el botón primero.", true);
+      setHint("Sin espacio. Mové el botón antes.", true);
       return;
     }
     state.layout[id] = { row: fitted.row, col: fitted.col, size };
     if (!saveLayout(state.layout)) {
-      setHint("No se pudo guardar el diseño en este navegador.", true);
+      setHint("No se pudo guardar.", true);
     }
     placeButtons();
   }
@@ -397,9 +403,9 @@ export function mountRemote(el, dispatch) {
       Number(cell.dataset.col),
     );
     if (moved === true) {
-      setHint("Diseño guardado. Seguí moviendo o pasá a Usar.", true);
+      setHint("Guardado. Seguí o pasá a Usar.", true);
     } else if (moved === "unsaved") {
-      setHint("No se pudo guardar el diseño en este navegador.", true);
+      setHint("No se pudo guardar.", true);
     }
   });
 
@@ -454,9 +460,9 @@ export function mountRemote(el, dispatch) {
       if (cell) {
         const moved = moveButton(id, cell.row, cell.col);
         if (moved === true) {
-          setHint("Diseño guardado en este navegador.", true);
+          setHint("Guardado.", true);
         } else if (moved === "unsaved") {
-          setHint("No se pudo guardar el diseño en este navegador.", true);
+          setHint("No se pudo guardar.", true);
         } else {
           placeButtons();
         }

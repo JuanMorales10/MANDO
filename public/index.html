@@ -2,22 +2,52 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#101522" />
+    <meta
+      name="description"
+      content="MANDO — Tu control, a tu manera. Configurá el mando y controlá la TV."
+    />
     <title>MANDO · Tu control, a tu manera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./identidad.css" />
     <link rel="stylesheet" href="./remote.css" />
     <link rel="stylesheet" href="./demo.css" />
   </head>
   <body>
-    <main class="mando-demo">
+    <a class="mando-skip" href="#remote-root">Ir al mando</a>
+
+    <div class="mando-demo">
+      <header class="mando-demo__brand">
+        <p class="mando-demo__wordmark">MANDO</p>
+        <p class="mando-demo__tagline">Tu control, a tu manera</p>
+      </header>
+
+      <section
+        class="mando-demo__stage"
+        aria-label="Estado de la TV"
+        aria-live="polite"
+      >
+        <p class="mando-demo__eyebrow">TV</p>
+        <p id="action-log" class="mando-demo__log">Listo</p>
+        <p class="mando-demo__coach">
+          Tocá un botón. En Editar, mové Silencio a donde te quede cómodo.
+        </p>
+      </section>
+
       <section class="mando-demo__remote" aria-label="Mando">
         <div id="remote-root"></div>
       </section>
-      <section class="mando-demo__stage" aria-label="TV provisional">
-        <p class="mando-demo__eyebrow">TV provisional</p>
-        <p id="action-log" class="mando-demo__log">Esperando acciones…</p>
-      </section>
-    </main>
+    </div>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>
