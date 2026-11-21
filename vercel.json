@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "public",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "regions": ["iad1"],
+  "env": {
+    "SALA": "2026"
+  }
 }

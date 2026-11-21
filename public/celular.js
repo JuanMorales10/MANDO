@@ -4,6 +4,7 @@
 import { BOTONES, SECCIONES, BOTON, FAVORITOS_INICIALES, nombreDe, ACCIONES } from "./mando-botones.js";
 import { applyAction, initialState } from "./tv-state.js";
 import { unirseASala, normalizarSala, esSalaNube, aplicarEnSala } from "./puente.js";
+import { mountAsistente } from "./asistente.js";
 
 const CLAVE_CONFIG = "mando-celular-v1";
 const CLAVE_CODIGO = "mando-sala";
@@ -153,6 +154,10 @@ let codigo = null;
 let modo = "usar";
 let estadoTV = null;
 let eventos = null;
+let pollTimer = null;
+let asistenteListo = false;
+/** @type {{ sincronizar?: (chat: unknown) => void } | null} */
+let mandy = null;
 
 // ---------- Red ----------
 
@@ -244,18 +249,41 @@ async function enviar(accion) {
   }
 }
 
+async function refrescarEstadoApi() {
+  try {
+    const res = await fetch("/api/estado", { cache: "no-store" });
+    if (!res.ok) {
+      marcarConexion(false);
+      return;
+    }
+    marcarConexion(true);
+    mostrarEstado(await res.json());
+  } catch {
+    marcarConexion(false);
+  }
+}
+
 function escuchar() {
   eventos?.close();
-  eventos = new EventSource("/api/eventos");
-  eventos.onopen = () => marcarConexion(true);
-  eventos.onerror = () => marcarConexion(false);
-  eventos.onmessage = (m) => {
-    try {
-      mostrarEstado(JSON.parse(m.data));
-    } catch {
-      // Mensaje incompleto: esperamos el próximo.
-    }
-  };
+  clearInterval(pollTimer);
+  // Polling: en Vercel el SSE no dura; también sirve en local.
+  pollTimer = setInterval(refrescarEstadoApi, 700);
+  refrescarEstadoApi();
+  try {
+    eventos = new EventSource("/api/eventos");
+    eventos.onopen = () => marcarConexion(true);
+    eventos.onerror = () => marcarConexion(false);
+    eventos.onmessage = (m) => {
+      try {
+        mostrarEstado(JSON.parse(m.data));
+        marcarConexion(true);
+      } catch {
+        // Mensaje incompleto: esperamos el próximo.
+      }
+    };
+  } catch {
+    // Polling alcanza.
+  }
 }
 
 function marcarConexion(on) {
@@ -263,7 +291,8 @@ function marcarConexion(on) {
   $("conexion").textContent = on ? "Conectado" : "Reconectando…";
 }
 
-function mostrarEstado({ state, conectores = [] }) {
+function mostrarEstado({ state, conectores = [], chat } = {}) {
+  if (chat) mandy?.sincronizar?.(chat);
   if (!state) return;
   estadoTV = state;
   body.dataset.tv = !state.power ? "apagada" : state.muted ? "silencio" : "sonando";
@@ -696,11 +725,37 @@ $("form-codigo").addEventListener("submit", (e) => {
   conectar($("codigo").value.trim());
 });
 
+function montarMandy() {
+  const root = $("asistente");
+  if (!root || asistenteListo) return;
+  asistenteListo = true;
+  let calladoPorMic = false;
+  mandy = mountAsistente({
+    root,
+    origen: "celular",
+    getCodigo: () => codigo,
+    enviar: (accion) => enviar(accion),
+    onMicInicio: async () => {
+      if (estadoTV && !estadoTV.muted) {
+        calladoPorMic = true;
+        await enviar("MUTE");
+      }
+    },
+    onMicFin: async () => {
+      if (calladoPorMic) {
+        calladoPorMic = false;
+        if (estadoTV?.muted) await enviar("MUTE");
+      }
+    },
+  });
+}
+
 function abrirMando() {
   $("onb").hidden = true;
   $("app").hidden = false;
   modo = "usar";
   render();
+  montarMandy();
   const guiar = () => setTimeout(() => recorrido.siPrimeraVez("mando"), 500);
   if (!perfilActual()) setTimeout(() => elegirPerfil(guiar), 300);
   else guiar();
@@ -708,6 +763,7 @@ function abrirMando() {
 
 function volverAlCodigo(motivo) {
   eventos?.close();
+  clearInterval(pollTimer);
   codigo = null;
   pantallaCodigo(motivo);
 }
