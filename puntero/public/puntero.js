@@ -238,6 +238,11 @@ requestAnimationFrame(vaciar);
 // El teléfono informa su velocidad de giro en tres ejes propios. En vez de suponer qué eje
 // es "derecha" y cuál "arriba" (cambia según el teléfono y cómo lo agarres), se aprende con
 // dos gestos: girar a la derecha y apuntar hacia arriba. Así la dirección nunca queda invertida.
+//
+// Además se usa la gravedad (el acelerómetro dice dónde está "abajo"): "derecha/izquierda" es
+// siempre girar alrededor de la vertical, y "arriba/abajo" es girar alrededor de un eje
+// horizontal. Así sigue andando bien aunque después agarres el teléfono más parado, más
+// acostado o con la muñeca torcida, y no solo en la postura exacta de la calibración.
 
 const esIOS = typeof DeviceMotionEvent !== "undefined" &&
   typeof DeviceMotionEvent.requestPermission === "function";
@@ -251,7 +256,12 @@ let llegaronDatos = false;
 
 const UMBRAL = 0.35; // grados por segundo que se descuentan: tapa el temblor del sensor en reposo
 
-let ejes = ajustes.ejes && Array.isArray(ajustes.ejes.x) && Array.isArray(ajustes.ejes.y) ? ajustes.ejes : null;
+// ejes = { v: 3, x, y, sx, f }: x/y son los giros aprendidos (respaldo si no hay acelerómetro);
+// sx es el signo de "derecha" respecto de la vertical; f es hacia dónde apunta el teléfono.
+let ejes = ajustes.ejes && ajustes.ejes.v === 3 && Array.isArray(ajustes.ejes.x) && Array.isArray(ajustes.ejes.y)
+  ? ajustes.ejes
+  : null;
+let grav = null; // vertical vista desde el teléfono (unitaria, suavizada)
 let pausaHasta = 0;
 let calibracion = null; // { paso: "derecha" | "quieto" | "arriba", suma: [x,y,z], quietoDesde, x }
 
@@ -261,6 +271,37 @@ const unitario = (a) => {
   const l = largo(a) || 1;
   return [a[0] / l, a[1] / l, a[2] / l];
 };
+const cruz = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const sinVertical = (a, g) => {
+  const c = punto(a, g);
+  return [a[0] - c * g[0], a[1] - c * g[1], a[2] - c * g[2]];
+};
+
+function medirGravedad(e, dt) {
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x == null || a.y == null || a.z == null) return;
+  const m = Math.hypot(a.x, a.y, a.z);
+  if (m < 4 || m > 16) return; // sacudón o caída libre: esa lectura no sirve
+  const u = [a.x / m, a.y / m, a.z / m];
+  if (!grav) {
+    grav = u;
+    return;
+  }
+  const k = 1 - Math.exp(-dt / 0.12);
+  grav = unitario([grav[0] + (u[0] - grav[0]) * k, grav[1] + (u[1] - grav[1]) * k, grav[2] + (u[2] - grav[2]) * k]);
+}
+
+// Velocidad hacia la derecha y hacia arriba, en grados por segundo.
+function velocidades(w) {
+  if (!grav || !ejes.f) return [punto(w, ejes.x), punto(w, ejes.y)];
+  // Eje horizontal de "arriba/abajo": se arma con dos pistas que se cubren entre sí
+  // (una aguanta que inclines el teléfono, la otra que tuerzas la muñeca).
+  const a = sinVertical(ejes.y, grav);
+  const b = cruz(ejes.f, grav);
+  const p = [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const vy = largo(p) > 0.25 ? punto(w, unitario(p)) : punto(w, ejes.y);
+  return [ejes.sx * punto(w, grav), vy];
+}
 
 function empezarCalibracion() {
   calibracion = { paso: "derecha", suma: [0, 0, 0], quietoDesde: 0, x: null };
@@ -302,7 +343,15 @@ function calibrar(w, dt, ahora) {
   if (rapidez > 20) for (let i = 0; i < 3; i++) c.suma[i] += w[i] * dt;
   if (largo(c.suma) < 14) return;
   if (c.paso === "derecha") {
-    c.x = unitario(c.suma);
+    const x = unitario(c.suma);
+    if (grav && Math.abs(punto(x, grav)) < 0.45) {
+      // Giró la muñeca o apuntó arriba/abajo: eso no es "derecha".
+      c.suma = [0, 0, 0];
+      $("calibrar-texto").textContent = "Ese giro no fue hacia el costado. Apuntá hacia la DERECHA →, como señalando una pared.";
+      return;
+    }
+    c.x = x;
+    c.g = grav ? grav.slice() : null;
     c.paso = "quieto";
     c.quietoDesde = 0;
     if (navigator.vibrate) navigator.vibrate(20);
@@ -317,8 +366,22 @@ function calibrar(w, dt, ahora) {
     $("calibrar-texto").textContent = "Ese giro se pareció al anterior. Apuntá hacia ARRIBA ↑ (como mirando el techo).";
     return;
   }
-  const y = unitario([crudo[0] - comun * c.x[0], crudo[1] - comun * c.x[1], crudo[2] - comun * c.x[2]]);
-  ejes = { x: c.x, y };
+  let y = unitario([crudo[0] - comun * c.x[0], crudo[1] - comun * c.x[1], crudo[2] - comun * c.x[2]]);
+  let sx = 0;
+  let f = null;
+  const g = grav || c.g;
+  if (g) {
+    const plano = sinVertical(crudo, g);
+    if (largo(plano) < 0.45) {
+      c.suma = [0, 0, 0];
+      $("calibrar-texto").textContent = "Ese giro se pareció al anterior. Apuntá hacia ARRIBA ↑ (como mirando el techo).";
+      return;
+    }
+    y = unitario(plano);
+    sx = punto(c.x, c.g || g) >= 0 ? 1 : -1;
+    f = unitario(cruz(g, y)); // así cruz(f, g) vuelve a dar "y" en esta misma postura
+  }
+  ejes = { v: 3, x: c.x, y, sx, f };
   ajustes.ejes = ejes;
   ajustes.invX = false;
   ajustes.invY = false;
@@ -342,6 +405,7 @@ function alMoverse(e) {
   const ahora = performance.now();
   const dt = Math.min(0.05, ultimo ? (ahora - ultimo) / 1000 : 0);
   ultimo = ahora;
+  if (dt > 0) medirGravedad(e, dt);
   if (!giroActivo || dt === 0) return;
 
   const w = [r.alpha || 0, r.beta || 0, r.gamma || 0]; // grados por segundo
@@ -356,8 +420,7 @@ function alMoverse(e) {
     return;
   }
 
-  let vx = punto(w, ejes.x); // positivo = hacia la derecha
-  let vy = punto(w, ejes.y); // positivo = hacia arriba
+  let [vx, vy] = velocidades(w); // positivo = hacia la derecha / hacia arriba
   vx = Math.sign(vx) * Math.max(0, Math.abs(vx) - UMBRAL);
   vy = Math.sign(vy) * Math.max(0, Math.abs(vy) - UMBRAL);
 

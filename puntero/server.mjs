@@ -4,7 +4,7 @@
 
 import { spawn, execFile, execFileSync } from "node:child_process";
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import { createRequire } from "node:module";
@@ -156,12 +156,23 @@ function arrancarAyudante() {
   });
   ayudante.on("exit", () => {
     ayudante = null;
+    resaltado = null;
     if (!cerrando) setTimeout(arrancarAyudante, 300);
   });
 }
 
 // Se vuelve a preguntar cada tanto: si el usuario da el permiso, los clics arrancan sin reiniciar.
 setInterval(() => alCursor("e"), 2500).unref();
+
+// Cursor grande en la Mac mientras hay un teléfono al mando (para que se vea desde lejos).
+let resaltado = null;
+setInterval(() => {
+  const hay = Boolean(cliente || porPost) && process.env.CURSOR_GRANDE !== "0";
+  if (ayudante && hay !== resaltado) {
+    resaltado = hay;
+    alCursor(hay ? "g 1" : "g 0");
+  }
+}, 250).unref();
 
 function alCursor(linea) {
   if (ayudante && ayudante.stdin.writable) ayudante.stdin.write(linea + "\n");
@@ -455,8 +466,10 @@ function cortar() {
 process.on("SIGINT", cortar);
 process.on("SIGTERM", cortar);
 
-if (!existsSync(path.join(AQUI, "cursor"))) {
-  console.log("  Compilando el ayudante del cursor (solo la primera vez)…");
+const binario = path.join(AQUI, "cursor");
+const viejo = existsSync(binario) && statSync(binario).mtimeMs < statSync(path.join(AQUI, "cursor.swift")).mtimeMs;
+if (!existsSync(binario) || viejo) {
+  console.log(viejo ? "  Actualizando el ayudante del cursor…" : "  Compilando el ayudante del cursor (solo la primera vez)…");
   try {
     execFileSync("swiftc", ["-O", path.join(AQUI, "cursor.swift"), "-o", path.join(AQUI, "cursor")], { stdio: "inherit" });
   } catch {
