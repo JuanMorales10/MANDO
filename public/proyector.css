@@ -73,7 +73,7 @@
 }
 .pro__qr {
   display: block;
-  width: min(100%, 220px, 24vh);
+  width: min(100%, 300px, 32vh);
   height: auto;
   aspect-ratio: 1;
   margin: 0 auto 1.6vh;
@@ -197,4 +197,15 @@
 @media (max-aspect-ratio: 1/1) {
   .pro { height: auto; overflow: auto; }
   .pro__escena { grid-template-columns: 1fr; height: auto; }
+}
+
+.pro__puntero {
+  margin: 1.2vh 0 0;
+  padding: 1vh 1vw;
+  border-radius: 14px;
+  background: var(--m-primario-suave, #221e4a);
+  color: var(--m-texto-primario, #a99fff);
+  font-weight: 700;
+  font-size: clamp(0.8rem, 1vw, 1.05rem);
+  line-height: 1.35;
 }

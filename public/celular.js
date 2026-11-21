@@ -333,6 +333,12 @@ async function conectar(valor) {
     guardado.escribir(CLAVE_CODIGO, valor, sessionStorage);
     mostrarEstado(datos);
     escuchar();
+    // Puntero: está en la puerta segura (https). Desde la entrada normal se ofrece con un botón,
+    // así el aviso del certificado aparece solo si alguien elige usarlo.
+    if (datos.punteroPuerto && location.protocol === "http:") {
+      $("abrir-puntero").href = `https://${location.hostname}:${datos.punteroPuerto}/puntero/index.html?c=${encodeURIComponent(valor)}`;
+      $("abrir-puntero").hidden = false;
+    }
     abrirMando();
   } catch (error) {
     pantallaCodigo(error.status === 403
@@ -372,7 +378,7 @@ const RECORRIDOS = {
     pasos: [
       { objetivo: '[data-tour="estado"]', titulo: "La tele, en vivo", texto: "Acá ves cómo está: volumen, silencio y canal. Cambia apenas tocás un botón." },
       { objetivo: '[data-tour="favoritos"]', titulo: "Lo que más usás, arriba", texto: "Tus botones, grandes y a mano. Abajo están todos: navegación, reproducción, apps y números." },
-      { objetivo: ['a[href="/puntero/index.html"]', '[data-tour="modo"]'], titulo: "Hacelo tuyo", texto: "Tocá «Editar» para elegir tus botones. Y con «Puntero», movés el celular en el aire para mover el cursor." },
+      { objetivo: ['#abrir-puntero', 'a[href="/puntero/index.html"]', '[data-tour="modo"]'], titulo: "Hacelo tuyo", texto: "Tocá «Editar» para elegir tus botones. Y con «Puntero», movés el celular en el aire para mover el cursor." },
     ],
   },
   editar: {

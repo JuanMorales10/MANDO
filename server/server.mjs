@@ -76,6 +76,7 @@ export function crearServidor({ codigo, conectores = [], pasoVolumen = 1, log = 
     ultima: null,
   };
   const oyentes = new Set();
+  const extras = {};
 
   const resumenConectores = () => conectores.map((c) => ({ nombre: c.nombre, ...c.estado() }));
   const paquete = () => ({ state: sala.state, ultima: sala.ultima, conectores: resumenConectores() });
@@ -131,7 +132,8 @@ export function crearServidor({ codigo, conectores = [], pasoVolumen = 1, log = 
           return json(res, 400, { error: "JSON inválido" });
         }
         if (String(datos?.codigo) !== sala.codigo) return json(res, 403, { error: "Código incorrecto" });
-        return json(res, 200, paquete());
+        // Extras que suma el arranque (por ejemplo, en qué puerto seguro está el puntero).
+        return json(res, 200, { ...paquete(), ...extras });
       }
 
       if (url.pathname === "/api/eventos" && req.method === "GET") {
@@ -181,7 +183,7 @@ export function crearServidor({ codigo, conectores = [], pasoVolumen = 1, log = 
     oyentes.clear();
   });
 
-  return { server, sala, ejecutar, sincronizar };
+  return { server, sala, ejecutar, sincronizar, extras };
 }
 
 async function servirArchivo(pathname, res) {

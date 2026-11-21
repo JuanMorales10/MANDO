@@ -36,6 +36,8 @@ const app = crearServidor({
 for (const c of conectores) await c.iniciar?.(app);
 
 const puntero = await sumarPuntero(app, { puertoHttps, puertoPantalla, log });
+// El mando del celular (entrada normal, sin aviso de certificado) ofrece el puntero con un botón.
+if (puntero.disponible) app.extras.punteroPuerto = puertoHttps;
 
 app.server.listen(puerto, "0.0.0.0", () => {
   console.log("\nMANDO · Tu control, a tu manera");
