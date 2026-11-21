@@ -420,3 +420,16 @@
     min-height: 240px;
   }
 }
+
+/* Mandy minimizable (celular y /ai) */
+.mandy__titulos { flex: 1; min-width: 0; }
+.mandy__min {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--m-borde, #2a2e3d); background: var(--m-elevado, #1b1e29); color: var(--m-texto, #f4f5fa);
+  cursor: pointer;
+}
+.mandy__min svg { width: 20px; height: 20px; transition: transform 0.2s ease; }
+.mandy.is-min .mandy__min svg { transform: rotate(180deg); }
+.mandy.is-min .mandy__cuerpo { display: none; }
+.mandy.is-min .mandy__cab { cursor: pointer; }
+.mandy.is-min .mandy__hint::after { content: " · tocá para abrir"; }
