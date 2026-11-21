@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MANDO · Prueba del recorrido</title>
+  <link rel="stylesheet" href="../public/identidad.css" />
+  <link rel="stylesheet" href="../public/remote.css" />
+  <link rel="stylesheet" href="../public/tv.css" />
+  <style>
+    body { margin: 0; padding: 16px; background: #101522; color: #F5F4EE; font: 18px/1.4 system-ui, sans-serif; }
+    h1 { margin: 0 0 4px; font-size: 28px; }
+    #resumen { font-size: 24px; font-weight: 700; margin: 8px 0 16px; }
+    #resumen.ok { color: #C9F76A; } #resumen.falla { color: #ff7b7b; }
+    ol { padding-left: 24px; } li { margin: 4px 0; }
+    li.ok::marker { color: #C9F76A; } li.falla { color: #ff7b7b; }
+    .escena { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Prueba del recorrido del jurado</h1>
+  <p>Editar → mover y agrandar Silencio → Usar → tocar el botón reubicado → TV silenciada. Se ejecuta sola al abrir la página.</p>
+  <div id="resumen">Ejecutando…</div>
+  <ol id="pasos"></ol>
+  <div class="escena"><div id="mando"></div><div id="tv"></div></div>
+
+  <script type="module">
+    // Abrir con un servidor estático desde la raíz del repo, por ejemplo:
+    //   python3 -m http.server 8000   →   http://localhost:8000/tests/recorrido.html
+    // Usa las piezas reales de public/: remote.js (compu 1), tv-state.js (compu 2) y tv.js (compu 3).
+    const CLAVE = "mando-layout-v1";
+    const pasos = document.getElementById("pasos");
+    const resumen = document.getElementById("resumen");
+    let fallas = 0;
+
+    function check(texto, ok, detalle = "") {
+      const li = document.createElement("li");
+      li.className = ok ? "ok" : "falla";
+      li.textContent = `${ok ? "✔" : "✘"} ${texto}${!ok && detalle ? ` (${detalle})` : ""}`;
+      pasos.append(li);
+      if (!ok) fallas += 1;
+      return ok;
+    }
+
+    function terminar(error) {
+      if (error) check("La prueba terminó sin errores de JavaScript", false, error.message);
+      resumen.textContent = fallas ? `${fallas} paso(s) fallaron` : "Recorrido completo OK";
+      resumen.className = fallas ? "falla" : "ok";
+      document.title = `${fallas ? "FALLA" : "OK"} · MANDO recorrido`;
+      window.__resultado = { ok: fallas === 0, fallas };
+    }
+
+    const guardado = localStorage.getItem(CLAVE);
+    try {
+      const [{ mountRemote }, { renderTV }, { initialState, applyAction }] = await Promise.all([
+        import("../public/remote.js"),
+        import("../public/tv.js"),
+        import("../public/tv-state.js"),
+      ]);
+      check("Se cargan los tres módulos", true);
+
+      // Arranca con el diseño por defecto, sin lo que haya guardado este navegador.
+      localStorage.removeItem(CLAVE);
+
+      const mandoEl = document.getElementById("mando");
+      const tvEl = document.getElementById("tv");
+      const acciones = [];
+      let state = initialState;
+      // La misma conexión que pide el plan para app.js.
+      const dispatch = (action) => {
+        acciones.push(action);
+        state = applyAction(state, action);
+        renderTV(tvEl, state);
+      };
+      renderTV(tvEl, state);
+      mountRemote(mandoEl, dispatch);
+
+      const $ = (sel) => mandoEl.querySelector(sel);
+      const tv = () => tvEl.querySelector(".mando-tv");
+      const silencio = () => $('.mando-remote__btn[data-action="MUTE"]');
+      const posicion = () => silencio().style.gridRow + " | " + silencio().style.gridColumn;
+
+      check("La TV arranca con initialState (volumen 15, sin silencio)",
+        tv()?.dataset.silencio === "no" && tvEl.querySelector('[data-tv="volumen"]')?.textContent === "15");
+      check("El mando muestra Silencio, Volumen + y Volumen −",
+        !!silencio() && !!$('[data-action="VOL_UP"]') && !!$('[data-action="VOL_DOWN"]'));
+
+      // 1. Editar
+      $('.mando-remote__mode[data-mode="editar"]').click();
+      check("Pasa a modo Editar", mandoEl.classList.contains("is-edit"));
+
+      // 2. Mover Silencio: seleccionar y tocar una casilla libre (plan B del plan, sin arrastrar).
+      const antes = posicion();
+      silencio().click();
+      $('.mando-remote__cell[data-row="3"][data-col="0"]').click();
+      const despuesDeMover = posicion();
+      check("Silencio se mueve a otra casilla", despuesDeMover !== antes, `quedó en ${despuesDeMover}`);
+
+      // 3. Agrandar Silencio
+      $('.mando-remote__tool[data-size="large"]').click();
+      check("Silencio pasa a tamaño grande", silencio().classList.contains("mando-remote__btn--large"));
+
+      check("En Editar no se emitió ninguna acción", acciones.length === 0, `emitió ${acciones.join(", ")}`);
+
+      // 4. El diseño queda guardado para la recarga.
+      let diseno = null;
+      try { diseno = JSON.parse(localStorage.getItem(CLAVE)); } catch {}
+      check("El diseño se guarda en mando-layout-v1 con Silencio grande", diseno?.MUTE?.size === "large");
+
+      // 5. Usar
+      $('.mando-remote__mode[data-mode="usar"]').click();
+      check("Vuelve a modo Usar", mandoEl.classList.contains("is-use"));
+      check("Al volver a Usar, Silencio sigue reubicado y grande",
+        posicion() !== antes && silencio().classList.contains("mando-remote__btn--large"));
+
+      // 6. Tocar el botón reubicado → TV silenciada
+      silencio().click();
+      check("Tocar Silencio emite una sola acción MUTE", acciones.length === 1 && acciones[0] === "MUTE",
+        `emitió ${JSON.stringify(acciones)}`);
+      check("La TV muestra SILENCIO", tv()?.dataset.silencio === "si");
+      check("El volumen guardado sigue en 15", tvEl.querySelector('[data-tv="volumen-guardado"]')?.textContent === "15");
+
+      // 7. Volver a tocar → vuelve el volumen anterior
+      silencio().click();
+      check("Segundo toque: se quita el silencio y vuelve a verse el volumen 15",
+        tv()?.dataset.silencio === "no" && tvEl.querySelector('[data-tv="volumen"]')?.textContent === "15");
+
+      // 8. Volumen + y −
+      $('[data-action="VOL_UP"]').click();
+      check("Volumen + sube a 16", tvEl.querySelector('[data-tv="volumen"]')?.textContent === "16");
+      $('[data-action="VOL_DOWN"]').click();
+      check("Volumen − vuelve a 15", tvEl.querySelector('[data-tv="volumen"]')?.textContent === "15");
+
+      // 9. Recarga: un mando nuevo lee el diseño guardado.
+      const otro = document.createElement("div");
+      mountRemote(otro, () => {});
+      const recargado = otro.querySelector('.mando-remote__btn[data-action="MUTE"]');
+      check("Al recargar, Silencio conserva lugar y tamaño",
+        recargado.classList.contains("mando-remote__btn--large") &&
+        recargado.style.gridRow + " | " + recargado.style.gridColumn === posicion());
+
+      terminar();
+    } catch (error) {
+      terminar(error);
+    } finally {
+      // Deja el diseño del navegador como estaba antes de la prueba.
+      if (guardado === null) localStorage.removeItem(CLAVE);
+      else localStorage.setItem(CLAVE, guardado);
+    }
+  </script>
+</body>
+</html>
