@@ -31,8 +31,8 @@ la notebook), entrar al mando y tocar **🎯 Puntero** → **Activar puntero**.
 
 ## Seguridad
 
-- Mismo código de 4 dígitos de la sala. Ocho códigos incorrectos desde un mismo
-  teléfono lo bloquean un minuto.
+- Mismo código de 4 dígitos de la sala. Veinte códigos incorrectos desde un mismo
+  teléfono lo bloquean 30 segundos.
 - Solo redes privadas, solo desde la propia página, un solo teléfono a la vez.
 - Lista cerrada de órdenes: mover, clic, clic derecho, centrar, rueda y siete teclas
   fijas. Nunca se ejecuta un comando que llegue del teléfono.

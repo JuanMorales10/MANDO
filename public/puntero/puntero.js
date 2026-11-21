@@ -61,7 +61,8 @@ function conectar() {
   if (modoPost) return;
   const esquema = location.protocol === "http:" ? "ws" : "wss";
   let abrio = false;
-  ws = new WebSocket(`${esquema}://${location.host}/puntero/ws?t=${encodeURIComponent(token)}`);
+  const este = new WebSocket(`${esquema}://${location.host}/puntero/ws?t=${encodeURIComponent(token)}`);
+  ws = este;
   ws.onopen = () => {
     abrio = true;
     reintento = 0;
@@ -76,6 +77,7 @@ function conectar() {
     }
   };
   ws.onclose = (e) => {
+    if (ws !== este) return; // es una conexión vieja: ya hay otra en su lugar
     ws = null;
     if (cortado) return;
     if (e.code === 4000) {
@@ -110,7 +112,11 @@ async function post(lista) {
     body: JSON.stringify(lista),
   });
   ultimoPost = performance.now();
-  if (r.status === 401) throw new Error("Código vencido: escaneá el QR otra vez");
+  if (r.status === 401) {
+    const e = new Error("Código incorrecto");
+    e.sinCodigo = true;
+    throw e;
+  }
   if (r.status === 409) throw new Error("Otro teléfono tiene el control");
   if (!r.ok) throw new Error("Sin conexión");
   const datos = await r.json();
@@ -126,6 +132,11 @@ async function probarPost() {
   } catch (e) {
     ponerEstado("sin", e.message);
     fallosWs = 0;
+    if (e.sinCodigo) {
+      // Reintentar con un código malo solo consigue que la compu bloquee a este teléfono.
+      aviso.textContent = "El código ya no sirve. Tocá «Mando», entrá de nuevo con el código del proyector y volvé.";
+      return;
+    }
     setTimeout(conectar, 2000);
   }
 }
@@ -142,7 +153,7 @@ async function vaciarCola() {
       cola = [];
       ponerEstado("sin", e.message);
       fallosWs = 0;
-      setTimeout(conectar, 2000);
+      if (!e.sinCodigo) setTimeout(conectar, 2000);
     }
   }
   enviando = false;
@@ -271,8 +282,13 @@ const unitario = (a) => {
   return [a[0] / l, a[1] / l, a[2] / l];
 };
 
+// Al tocar «Activar» la mano todavía se está acomodando: se espera un momento antes de
+// escuchar el primer gesto, y se pide un giro amplio para darlo por bueno.
+const ESPERA_CALIBRAR = 1000;
+const GIRO_CALIBRAR = 20;
+
 function empezarCalibracion() {
-  calibracion = { paso: "derecha", suma: [0, 0, 0], quietoDesde: 0, x: null };
+  calibracion = { paso: "derecha", suma: [0, 0, 0], quietoDesde: 0, x: null, desde: performance.now() + ESPERA_CALIBRAR };
   suaveX = 0;
   suaveY = 0;
   pintarCalibracion();
@@ -296,6 +312,7 @@ function pintarCalibracion() {
 
 function calibrar(w, dt, ahora) {
   const c = calibracion;
+  if (ahora < c.desde) return;
   const rapidez = largo(w);
   if (c.paso === "quieto") {
     if (rapidez > 12) c.quietoDesde = 0;
@@ -309,7 +326,7 @@ function calibrar(w, dt, ahora) {
   }
   // Se junta el giro mientras el gesto es claro; con 14 grados girados alcanza.
   if (rapidez > 20) for (let i = 0; i < 3; i++) c.suma[i] += w[i] * dt;
-  if (largo(c.suma) < 14) return;
+  if (largo(c.suma) < GIRO_CALIBRAR) return;
   if (c.paso === "derecha") {
     c.x = unitario(c.suma);
     c.paso = "quieto";
@@ -521,17 +538,54 @@ for (const boton of document.querySelectorAll("[data-rueda]")) {
   boton.onclick = () => enviar({ t: "s", y: Number(boton.dataset.rueda) });
 }
 
-$("cortar").onclick = () => {
+const botonCortar = $("cortar");
+const textoCortar = [...botonCortar.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+function pintarCortar() {
+  if (textoCortar) textoCortar.textContent = cortado ? "Volver a conectar" : "Desconectar";
+  else botonCortar.textContent = cortado ? "Volver a conectar" : "Desconectar";
+}
+
+botonCortar.onclick = () => {
+  if (cortado) {
+    // Volver a conectar, sin recargar la página.
+    cortado = false;
+    modoPost = false;
+    reintento = 0;
+    fallosWs = 0;
+    cola = [];
+    pintarCortar();
+    ponerEstado("sin", "Conectando…");
+    aviso.textContent = "Tocá «Activar puntero» para volver a mover el cursor.";
+    conectar();
+    return;
+  }
   cortado = true;
   giroActivo = false;
+  calibracion = null;
+  pintarCalibracion();
   pintarActivar();
   if (modoPost) fetch("/puntero/chau", { method: "POST", headers: { "x-token": token, "x-id": ID }, keepalive: true }).catch(() => {});
   modoPost = false;
+  cola = [];
   if (ws) ws.close();
+  ws = null;
   if (bloqueo) bloqueo.release().catch(() => {});
   ponerEstado("sin", "Desconectado");
-  aviso.textContent = "Cortaste la conexión. Para volver, recargá la página.";
+  aviso.textContent = "Cortaste la conexión. Tocá «Volver a conectar» cuando quieras seguir.";
+  pintarCortar();
 };
+
+// Al volver a la pestaña (o desbloquear el teléfono) se reconecta solo.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || cortado) return;
+  const conectado = modoPost || (ws && ws.readyState === WebSocket.OPEN);
+  const conectando = ws && ws.readyState === WebSocket.CONNECTING;
+  if (!conectado && !conectando) {
+    reintento = 0;
+    fallosWs = 0;
+    conectar();
+  }
+});
 
 $("clic").onclick = () => enviar({ t: "c" });
 $("derecho").onclick = () => enviar({ t: "r" });
