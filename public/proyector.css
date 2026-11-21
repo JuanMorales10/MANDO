@@ -1,4 +1,11 @@
-/* Pantalla del proyector. Prefijo .pro */
+/* Pantalla del proyector. Prefijo .pro · paleta "Brasa" (la misma del celular). */
+
+.pro {
+  /* La TV de Nico toma estas variables, así que adopta la paleta sin tocar tv.css. */
+  --azul-noche: #0C0C10;
+  --marfil: #F5F2EC;
+  --lima: #FF6A3D;
+}
 
 .pro {
   margin: 0;
@@ -53,7 +60,7 @@
   padding: 1.6vh 2.4vw;
   border-radius: 999px;
   background: var(--lima, #C9F76A);
-  color: #101522;
+  color: #1C0B04;
   font-weight: 800;
   font-size: clamp(1.2rem, 2.2vw, 2.4rem);
   transition: transform 0.25s ease;

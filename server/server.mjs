@@ -10,8 +10,9 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomInt } from "node:crypto";
 import { initialState, applyAction } from "../public/tv-state.js";
+import { ACCIONES } from "../public/mando-botones.js";
 
-export const ACCIONES = ["POWER", "MUTE", "VOL_UP", "VOL_DOWN", "CH_UP", "CH_DOWN"];
+export { ACCIONES };
 
 const PUBLIC_DIR = fileURLToPath(new URL("../public/", import.meta.url));
 const TIPOS = {
@@ -206,8 +207,12 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   const { crearConectorComputadora } = await import("./conectores/computadora.mjs");
   const { crearConectorPjlink } = await import("./conectores/pjlink.mjs");
 
+  const puerto = Number(process.env.PORT) || 8080;
   const conectores = [];
-  if (process.env.COMPUTADORA !== "no") conectores.push(crearConectorComputadora());
+  if (process.env.COMPUTADORA !== "no") {
+    // "Inicio" vuelve a la pantalla de MANDO en el proyector.
+    conectores.push(crearConectorComputadora({ inicio: `http://localhost:${puerto}/proyector.html` }));
+  }
   if (process.env.PJLINK_HOST) {
     conectores.push(
       crearConectorPjlink({
@@ -218,7 +223,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     );
   }
 
-  const puerto = Number(process.env.PORT) || 8080;
   const app = crearServidor({
     codigo: process.env.SALA,
     conectores,

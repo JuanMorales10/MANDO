@@ -4,7 +4,7 @@ import net from "node:net";
 import { crearServidor } from "../server/server.mjs";
 import { enviarPjlink, comandosPara, crearConectorPjlink } from "../server/conectores/pjlink.mjs";
 import { crearConectorComputadora } from "../server/conectores/computadora.mjs";
-import { initialState } from "../public/tv-state.js";
+import { initialState, applyAction } from "../public/tv-state.js";
 
 // ---------- Servidor ----------
 
@@ -212,4 +212,54 @@ test("la computadora en un sistema no soportado no rompe nada", async () => {
   const conector = crearConectorComputadora({ sistema: "linux" });
   assert.equal(conector.estado().ok, false);
   await conector.aplicar(initialState, initialState, "MUTE");
+});
+
+// ---------- Botones del mando completo ----------
+
+import { pasosMac, pasosWindows } from "../server/conectores/computadora.mjs";
+import { BOTONES, ACCIONES } from "../public/mando-botones.js";
+
+test("el catálogo no repite botones y el servidor acepta todos", async () => {
+  assert.equal(new Set(ACCIONES).size, ACCIONES.length);
+  for (const id of ["NUM_0", "APP_NETFLIX", "OK", "PLAY_PAUSE"]) {
+    const res = await accion({ codigo: "1234", accion: id });
+    assert.equal(res.status, 200, id);
+  }
+});
+
+test("en Mac, cada botón del catálogo hace algo", () => {
+  const s = initialState;
+  for (const { id } of BOTONES) {
+    const despues = applyAction(s, id);
+    assert.ok(pasosMac(s, despues, id, { inicio: "http://localhost:8080/proyector.html" }).length > 0, id);
+  }
+});
+
+test("en Mac, las apps abren su sitio e Inicio vuelve a MANDO", () => {
+  assert.deepEqual(pasosMac(initialState, initialState, "APP_NETFLIX"), [["open", ["https://www.netflix.com/browse"]]]);
+  assert.deepEqual(pasosMac(initialState, initialState, "HOME", { inicio: "http://x/proyector.html" }), [["open", ["http://x/proyector.html"]]]);
+  assert.match(pasosMac(initialState, initialState, "PLAY_PAUSE")[0][1][1], /key code 49/);
+  assert.match(pasosMac(initialState, initialState, "NUM_5")[0][1][1], /key code 23/);
+});
+
+test("en Windows, las apps se abren con start y las teclas con SendKeys", () => {
+  assert.deepEqual(pasosWindows(initialState, initialState, "APP_YOUTUBE"), [["cmd", ["/c", "start", "", "https://www.youtube.com/tv"]]]);
+  assert.match(pasosWindows(initialState, initialState, "OK")[0][1][2], /SendKeys\('~'\)/);
+});
+
+test("la computadora ejecuta los pasos y avisa si falta Accesibilidad", async () => {
+  const ejecutados = [];
+  const conector = crearConectorComputadora({
+    sistema: "darwin",
+    ejecutar: async (programa, args) => {
+      if (args.join(" ").includes("System Events")) throw new Error("osascript no está autorizado (-25211)");
+      ejecutados.push([programa, ...args]);
+    },
+  });
+  await conector.aplicar(initialState, initialState, "APP_SPOTIFY");
+  assert.deepEqual(ejecutados, [["open", "https://open.spotify.com"]]);
+  assert.equal(conector.estado().ok, true);
+  await conector.aplicar(initialState, initialState, "OK");
+  assert.equal(conector.estado().ok, false);
+  assert.match(conector.estado().detalle, /Accesibilidad/);
 });

@@ -2,15 +2,8 @@
 
 import { renderTV } from "./tv.js";
 import { initialState } from "./tv-state.js";
+import { nombreDe } from "./mando-botones.js";
 
-const NOMBRES = {
-  POWER: "Encendido",
-  MUTE: "Silencio",
-  VOL_UP: "Volumen +",
-  VOL_DOWN: "Volumen −",
-  CH_UP: "Canal +",
-  CH_DOWN: "Canal −",
-};
 
 const $ = (id) => document.getElementById(id);
 const tvEl = $("tv");
@@ -38,7 +31,7 @@ function avisar(ultima) {
   if (!ultima || ultima.hora <= ultimaVista) return;
   ultimaVista = ultima.hora;
   const quien = ultima.origen === "celular" ? "📱 Desde un celular" : "💻 Desde la notebook";
-  $("aviso").textContent = `${quien}: ${NOMBRES[ultima.accion] || ultima.accion}`;
+  $("aviso").textContent = `${quien}: ${nombreDe(ultima.accion)}`;
   $("aviso").classList.add("is-visible");
   clearTimeout(ocultarAviso);
   ocultarAviso = setTimeout(() => $("aviso").classList.remove("is-visible"), 2200);

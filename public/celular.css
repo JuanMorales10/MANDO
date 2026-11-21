@@ -1,95 +1,309 @@
-/* Página del mando en el celular. Prefijo .cel */
+/* MANDO en el celular · paleta "Brasa": grafito con acento naranja brasa. */
+
+:root {
+  --fondo: #0C0C10;
+  --superficie: #17171D;
+  --superficie-2: #212129;
+  --borde: #2F2F3A;
+  --texto: #F5F2EC;
+  --texto-suave: #A3A0AB;
+  --acento: #FF6A3D;
+  --acento-texto: #1C0B04;
+  --encendido: #FF3D5A;
+  --ok: #3DD68C;
+  --radio: 18px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
 
 .cel {
+  overflow-x: hidden;
   margin: 0;
   min-height: 100dvh;
-  background: var(--azul-noche, #101522);
-  color: var(--marfil, #F5F4EE);
+  background: var(--fondo);
+  color: var(--texto);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
-  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.cel *, .cel *::before, .cel *::after { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
 
-.cel__barra {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.cel__marca { font-weight: 800; letter-spacing: 0.12em; font-size: 1.1rem; }
-
-.cel__conexion {
-  font-size: 0.9rem;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(245, 244, 238, 0.35);
-}
-.cel__conexion[data-estado="on"] { color: #101522; background: var(--lima, #C9F76A); border-color: transparent; }
-.cel__conexion[data-estado="on"]::before { content: "● "; }
-
-.cel__entrar { display: grid; gap: 14px; max-width: 420px; margin: 12vh auto 0; text-align: center; }
-.cel__entrar[hidden], .cel__mando[hidden] { display: none; }
-.cel__entrar h1 { margin: 0; font-size: 2rem; }
-.cel__entrar p { margin: 0; opacity: 0.8; font-size: 1.1rem; }
-
-.cel__entrar input {
-  font: 700 2.6rem/1 ui-monospace, "SF Mono", Menlo, monospace;
-  letter-spacing: 0.4em;
-  text-align: center;
-  padding: 14px 0 14px 0.4em;
-  border-radius: 16px;
-  border: 2px solid rgba(245, 244, 238, 0.4);
-  background: transparent;
-  color: inherit;
-}
-.cel__entrar input:focus { outline: 3px solid var(--lima, #C9F76A); outline-offset: 2px; }
-
-.cel__entrar button,
-.cel__extra button {
-  font: 700 1.15rem/1.2 inherit;
+.btn-primario {
+  width: 100%;
   min-height: 56px;
-  border-radius: 16px;
-  border: 2px solid var(--lima, #C9F76A);
+  border: 0;
+  border-radius: var(--radio);
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.btn-primario:active { transform: scale(0.98); }
+
+.btn-texto {
+  background: none;
+  border: 0;
+  color: var(--texto-suave);
+  font-weight: 600;
+  padding: 12px;
+  cursor: pointer;
+}
+
+/* ---------- Onboarding ---------- */
+
+.onb {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  max-width: 460px;
+  margin: 0 auto;
+}
+.onb[hidden], .onb__paso[hidden], .app[hidden], .tour[hidden] { display: none; }
+
+.onb__progreso {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--superficie-2);
+}
+.onb__progreso span {
+  display: block;
+  height: 100%;
+  width: 20%;
+  background: var(--acento);
+  transition: width 0.3s ease;
+}
+
+.onb__paso { display: grid; gap: 18px; animation: entrar 0.3s ease; }
+.onb__paso h1 { margin: 0; font-size: 2.1rem; line-height: 1.1; letter-spacing: -0.02em; }
+.onb__paso p { margin: 0; color: var(--texto-suave); font-size: 1.15rem; line-height: 1.45; }
+.onb__marca { font-weight: 900; letter-spacing: 0.18em; color: var(--acento); font-size: 1.1rem; }
+.onb__icono { font-size: 3rem; }
+.onb__check { color: var(--ok) !important; font-weight: 700; }
+.onb__error { color: var(--encendido) !important; font-weight: 700; min-height: 1.4em; }
+
+#form-codigo { display: grid; gap: 14px; }
+#codigo {
+  width: 100%;
+  min-width: 0;
+  font: 800 2.8rem/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.45em;
+  text-align: center;
+  padding: 16px 0 16px 0.45em;
+  border-radius: var(--radio);
+  border: 2px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+}
+#codigo:focus { outline: 3px solid var(--acento); outline-offset: 2px; }
+
+.onb__aparatos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.onb__aparatos li {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+}
+.onb__aparatos strong { font-size: 1.1rem; }
+.onb__aparatos span { color: var(--texto-suave); }
+.onb__aparatos li[data-ok="false"] strong { color: #FFB86B; }
+
+@keyframes entrar { from { opacity: 0; transform: translateY(12px); } }
+
+/* ---------- Mando ---------- */
+
+.app {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  display: grid;
+  gap: 14px;
+}
+
+.app__barra { display: flex; align-items: center; gap: 10px; }
+.app__marca { font-weight: 900; letter-spacing: 0.18em; color: var(--acento); margin-right: auto; }
+.app__ayuda {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--borde); background: var(--superficie); cursor: pointer; font-weight: 800;
+}
+.app__conexion {
+  font-size: 0.85rem; font-weight: 700;
+  padding: 6px 12px; border-radius: 999px;
+  background: var(--superficie-2); color: var(--texto-suave);
+}
+.app__conexion[data-estado="on"] { background: rgba(61, 214, 140, 0.15); color: var(--ok); }
+.app__conexion[data-estado="on"]::before { content: "● "; }
+
+.estado {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  transition: background 0.2s ease;
+}
+.estado__principal { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+.estado__detalle { color: var(--texto-suave); font-size: 0.95rem; }
+.cel[data-tv="silencio"] .estado { background: var(--acento); color: var(--acento-texto); border-color: transparent; }
+.cel[data-tv="silencio"] .estado__detalle { color: var(--acento-texto); opacity: 0.75; }
+.cel[data-tv="apagada"] .estado { border-style: dashed; opacity: 0.7; }
+
+.modos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+}
+.modos__btn {
+  min-height: 48px; border: 0; border-radius: 999px;
+  background: none; font-weight: 800; color: var(--texto-suave); cursor: pointer;
+}
+.modos__btn[aria-pressed="true"] { background: var(--texto); color: var(--fondo); }
+.cel[data-modo="editar"] .modos__btn[aria-pressed="true"] { background: var(--acento); color: var(--acento-texto); }
+
+.aviso-edicion {
+  margin: 0; padding: 10px 14px; border-radius: 12px;
+  border: 1px dashed var(--acento); color: var(--acento); font-weight: 600; font-size: 0.95rem;
+}
+
+.error { margin: 0; color: var(--encendido); font-weight: 700; min-height: 1.2em; }
+
+/* Secciones */
+#mando { display: grid; gap: 26px; }
+.seccion { display: grid; gap: 10px; }
+.seccion__cabeza { display: flex; align-items: center; justify-content: space-between; }
+.seccion__titulo { margin: 0; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-suave); }
+.seccion__ojo {
+  border: 1px solid var(--borde); background: var(--superficie); border-radius: 999px;
+  padding: 6px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.seccion[data-oculta="true"] .rejilla { opacity: 0.3; }
+
+.rejilla { display: grid; gap: 10px; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+.seccion--favoritos .rejilla { --cols: 2; }
+.seccion--basicos .rejilla { --cols: 3; }
+.seccion--reproduccion .rejilla { --cols: 4; }
+.seccion--apps .rejilla { --cols: 2; }
+.seccion--numeros .rejilla { --cols: 3; }
+
+/* Cruceta: ▲ / ◀ OK ▶ / ▼ y abajo Volver, Inicio, Menú */
+.seccion--navegacion .rejilla {
+  --cols: 3;
+  grid-template-areas:
+    ".     up    ."
+    "left  ok    right"
+    ".     down  ."
+    "back  home  menu";
+}
+.seccion--navegacion [data-accion="UP"] { grid-area: up; }
+.seccion--navegacion [data-accion="LEFT"] { grid-area: left; }
+.seccion--navegacion [data-accion="OK"] { grid-area: ok; border-radius: 50%; aspect-ratio: 1; }
+.seccion--navegacion [data-accion="RIGHT"] { grid-area: right; }
+.seccion--navegacion [data-accion="DOWN"] { grid-area: down; }
+.seccion--navegacion [data-accion="BACK"] { grid-area: back; }
+.seccion--navegacion [data-accion="HOME"] { grid-area: home; }
+.seccion--navegacion [data-accion="MENU"] { grid-area: menu; }
+.seccion--numeros [data-accion="NUM_0"] { grid-column: 2; }
+
+/* Botones */
+.boton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px 6px;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde);
+  background: var(--superficie-2);
   cursor: pointer;
   touch-action: manipulation;
+  user-select: none;
+  transition: transform 0.08s ease, background 0.15s ease;
 }
-.cel__entrar button { background: var(--lima, #C9F76A); color: #101522; }
+.boton:active, .boton.is-pulso { transform: scale(0.95); background: var(--borde); }
+.boton__icono { font-size: 1.5rem; line-height: 1; font-weight: 800; }
+.boton__nombre { font-size: 0.85rem; font-weight: 700; color: var(--texto-suave); text-align: center; }
+.boton--solo-icono .boton__icono { font-size: 1.6rem; }
 
-.cel__estado {
-  margin: 0 0 12px;
-  padding: 12px 16px;
-  border-radius: 16px;
-  border: 2px solid rgba(245, 244, 238, 0.25);
-  font-size: 1.35rem;
-  font-weight: 800;
-  min-height: 1.5em;
-  transition: background 0.2s ease, color 0.2s ease;
+.boton[data-tono="encendido"] .boton__icono { color: var(--encendido); }
+.boton[data-activo="true"] { background: var(--acento); border-color: transparent; }
+.boton[data-activo="true"] .boton__icono, .boton[data-activo="true"] .boton__nombre { color: var(--acento-texto); }
+
+.boton--app { min-height: 68px; background: var(--superficie); }
+.boton--app .boton__nombre { font-size: 1.05rem; color: var(--texto); }
+
+/* Favoritos: grandes y arriba */
+.seccion--favoritos .boton { min-height: 96px; }
+.seccion--favoritos .boton__icono { font-size: 2.1rem; }
+.seccion--favoritos .boton__nombre { font-size: 1rem; color: var(--texto); }
+.favorito { display: grid; gap: 6px; min-width: 0; }
+.favorito .boton { width: 100%; }
+.favorito.is-grande { grid-column: span 2; }
+.favorito.is-grande .boton { min-height: 120px; }
+.favorito.is-grande .boton__icono { font-size: 2.8rem; }
+.favoritos__vacio { grid-column: 1 / -1; margin: 0; padding: 18px; text-align: center; color: var(--texto-suave); border: 1px dashed var(--borde); border-radius: var(--radio); }
+
+/* Edición */
+.estrella {
+  position: absolute; top: 6px; right: 6px;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--fondo); border: 1px solid var(--borde);
+  font-size: 0.95rem; color: var(--texto-suave);
 }
-.cel[data-tv="silencio"] .cel__estado { background: var(--lima, #C9F76A); color: #101522; border-color: transparent; }
-.cel[data-tv="apagada"] .cel__estado { opacity: 0.6; border-style: dashed; }
+.boton[data-favorito="true"] .estrella { background: var(--acento); color: var(--acento-texto); border-color: transparent; }
 
-/* En Usar, las casillas vacías no se ven: solo quedan los botones que hacen algo. */
-.cel .mando-remote.is-use .mando-remote__cell { visibility: hidden; }
-
-/* Silencio y Encendido muestran si están activos. */
-.cel .mando-remote__btn[data-activo="true"],
-.cel__extra button[data-activo="true"] {
-  background: var(--lima, #C9F76A);
-  color: #101522;
+.editor { display: flex; gap: 6px; }
+.editor button {
+  min-width: 44px; min-height: 40px; border-radius: 12px;
+  border: 1px solid var(--borde); background: var(--superficie); font-weight: 800; cursor: pointer;
 }
-.cel__extra button:disabled { opacity: 0.35; cursor: not-allowed; }
+.editor [data-grande] { flex: 1; font-size: 0.85rem; }
+.editor button:disabled { opacity: 0.3; cursor: default; }
 
-.cel__extra {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
+/* ---------- Guía por sectores ---------- */
+
+.tour { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+.tour__tarjeta {
+  pointer-events: auto;
+  position: fixed;
+  left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom));
+  max-width: 488px; margin: 0 auto;
+  padding: 18px;
+  border-radius: var(--radio);
+  background: var(--texto);
+  color: var(--fondo);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: grid; gap: 8px;
+  animation: entrar 0.25s ease;
 }
-.cel__extra button { background: transparent; color: inherit; padding: 8px 6px; }
-.cel__extra button:active { background: var(--lima, #C9F76A); color: #101522; }
+.tour__paso { margin: 0; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #C2410C; }
+.tour__texto { margin: 0; font-size: 1.15rem; font-weight: 700; line-height: 1.35; }
+.tour__acciones { display: flex; gap: 10px; align-items: center; }
+.tour__acciones .btn-primario { flex: 1; min-height: 48px; }
+.tour__acciones .btn-texto { color: #55525C; }
 
-.cel__error { color: #ff9b9b; font-weight: 600; min-height: 1.2em; margin: 8px 0 0; }
+.is-foco {
+  position: relative;
+  z-index: 40;
+  border-radius: var(--radio);
+  outline: 3px solid var(--acento);
+  outline-offset: 6px;
+  box-shadow: 0 0 0 9999px rgba(5, 5, 8, 0.78);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
