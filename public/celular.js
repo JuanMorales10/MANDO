@@ -4,7 +4,6 @@
 import { BOTONES, SECCIONES, BOTON, FAVORITOS_INICIALES, nombreDe } from "./mando-botones.js";
 
 const CLAVE_CONFIG = "mando-celular-v1";
-const CLAVE_ONBOARDING = "mando-onboarding-v1";
 const CLAVE_CODIGO = "mando-sala";
 
 const $ = (id) => document.getElementById(id);
@@ -309,58 +308,36 @@ $("mando").addEventListener("click", (evento) => {
 function cambiarModo(nuevo) {
   modo = nuevo;
   render();
+  // La primera vez que se entra a Editar, un recorrido corto explica cómo armarlo.
+  if (nuevo === "editar") setTimeout(() => recorrido.siPrimeraVez("editar"), 250);
 }
 
 for (const b of document.querySelectorAll(".modos__btn")) {
   b.addEventListener("click", () => cambiarModo(b.dataset.modo));
 }
 
-// ---------- Onboarding ----------
+// ---------- Entrar: con el QR es directo; sin QR, una sola pantalla con el código ----------
 
-const TOTAL_PASOS = 5;
-
-function irPaso(n) {
+function pantallaCodigo(motivo = "") {
   $("onb").hidden = false;
   $("app").hidden = true;
-  for (const p of document.querySelectorAll(".onb__paso")) p.hidden = Number(p.dataset.paso) !== n;
-  $("onb-barra").style.width = `${(n / TOTAL_PASOS) * 100}%`;
-  if (n === 3) setTimeout(() => $("codigo").focus(), 50);
+  $("error-codigo").textContent = motivo;
+  setTimeout(() => $("codigo").focus(), 50);
 }
 
-for (const b of document.querySelectorAll("[data-ir]")) b.addEventListener("click", () => irPaso(Number(b.dataset.ir)));
-
-function listarAparatos(conectores = []) {
-  const lista = $("onb-aparatos");
-  lista.replaceChildren();
-  const items = [{ nombre: "TV simulada", ok: true, detalle: "En la pantalla del proyector" }, ...conectores];
-  for (const c of items) {
-    const li = document.createElement("li");
-    li.dataset.ok = String(c.ok);
-    li.innerHTML = `<strong></strong><span></span>`;
-    li.querySelector("strong").textContent = `${c.ok ? "✓" : "⚠"} ${c.nombre === "Computadora" ? "La notebook del proyector" : c.nombre}`;
-    li.querySelector("span").textContent = c.nombre === "Computadora"
-      ? "Volumen, silencio, apps de streaming y reproducción"
-      : c.detalle || "";
-    lista.append(li);
-  }
-}
-
-async function conectar(valor, { desdeOnboarding = true } = {}) {
+async function conectar(valor) {
   $("error-codigo").textContent = "";
   try {
     const datos = await post("/api/entrar", { codigo: valor });
     codigo = valor;
     guardado.escribir(CLAVE_CODIGO, valor, sessionStorage);
-    listarAparatos(datos.conectores);
     mostrarEstado(datos);
     escuchar();
-    if (desdeOnboarding) irPaso(4);
-    else abrirMando();
+    abrirMando();
   } catch (error) {
-    irPaso(3);
-    $("error-codigo").textContent = error.status === 403
+    pantallaCodigo(error.status === 403
       ? "Ese código no es. Fijate el que aparece en el proyector."
-      : `No llego a la notebook: ${error.message}`;
+      : "No llego a la notebook. ¿Estás en el mismo wifi?");
   }
 }
 
@@ -369,89 +346,184 @@ $("form-codigo").addEventListener("submit", (e) => {
   conectar($("codigo").value.trim());
 });
 
-function abrirMando({ editar = false, guia = false } = {}) {
-  guardado.escribir(CLAVE_ONBOARDING, "hecho");
+function abrirMando() {
   $("onb").hidden = true;
   $("app").hidden = false;
-  modo = editar ? "editar" : "usar";
+  modo = "usar";
   render();
-  if (guia) setTimeout(iniciarGuia, 200);
+  setTimeout(() => recorrido.siPrimeraVez("mando"), 700);
 }
-
-$("onb-editar").addEventListener("click", () => abrirMando({ editar: true, guia: true }));
-$("onb-usar").addEventListener("click", () => abrirMando({ guia: true }));
 
 function volverAlCodigo(motivo) {
   eventos?.close();
   codigo = null;
-  irPaso(3);
-  $("error-codigo").textContent = motivo;
+  pantallaCodigo(motivo);
 }
 
-// ---------- Guía por sectores ----------
+// ---------- Recorrido por pantalla (estilo Pedido Claro) ----------
+// La PRIMERA vez se ilumina cada elemento clave y una tarjeta explica cómo se usa (3 pasos como máximo).
+// Se saltea en cualquier momento y se vuelve a ver con «?». Escape cierra, ← → cambian de paso,
+// un toque en el fondo cierra y el foco vuelve adonde estaba. Un paso cuyo elemento no se ve se saltea.
 
-const GUIA = [
-  { objetivo: "estado", texto: "Acá ves la TV en vivo: volumen, silencio y canal." },
-  { objetivo: "modo", texto: "Usar para controlar. Editar para armar el mando a tu manera." },
-  {
-    objetivo: "favoritos",
-    texto: () => modo === "editar"
-      ? "Tus botones. Tocá ☆ en cualquier botón para sumarlo, ⤢ para agrandarlo y ◀ ▶ para ordenarlo."
-      : "Tus botones: los que más usás, grandes y arriba.",
+const RECORRIDOS = {
+  mando: {
+    id: "mando-v1",
+    etiqueta: "Mando",
+    pasos: [
+      { objetivo: '[data-tour="estado"]', titulo: "La tele, en vivo", texto: "Acá ves cómo está: volumen, silencio y canal. Cambia apenas tocás un botón." },
+      { objetivo: '[data-tour="favoritos"]', titulo: "Lo que más usás, arriba", texto: "Tus botones, grandes y a mano. Abajo están todos: navegación, reproducción, apps y números." },
+      { objetivo: ['a[href="/puntero/index.html"]', '[data-tour="modo"]'], titulo: "Hacelo tuyo", texto: "Tocá «Editar» para elegir tus botones. Y con «Puntero», movés el celular en el aire para mover el cursor." },
+    ],
   },
-  { objetivo: "basicos", texto: "Básicos: encendido, entrada, silencio, volumen y canal." },
-  { objetivo: "navegacion", texto: "Flechas y OK para moverte por Netflix, YouTube o las diapositivas." },
-  { objetivo: "reproduccion", texto: "Play, pausa, adelantar y pantalla completa." },
-  { objetivo: "apps", texto: "Tocá una app y se abre directo en el proyector." },
-  { objetivo: "ayuda", texto: "¿Te perdiste? Tocá ? y vuelve esta guía." },
-];
+  editar: {
+    id: "editar-v1",
+    etiqueta: "Editar",
+    pasos: [
+      { objetivo: '.seccion--basicos .boton', titulo: "Elegí tus botones", texto: "Tocá cualquier botón para sumarlo a «Tus botones» (☆ → ★). Tocalo de nuevo para sacarlo." },
+      { objetivo: '[data-tour="favoritos"] .editor', titulo: "Agrandá y ordená", texto: "Con ⤢ lo hacés grande y con ◀ ▶ lo movés. Se guarda solo en este celular." },
+      { objetivo: '[data-modo="usar"]', titulo: "Listo, a usar", texto: "Volvé a «Usar» y controlá la tele. En Editar los botones no mandan nada." },
+    ],
+  },
+};
 
-let pasoGuia = 0;
-let pasosVisibles = [];
+const recorrido = (() => {
+  const capa = $("tour");
+  const hueco = $("tour-hueco");
+  const tarjeta = $("tour-tarjeta");
+  let actual = null;
+  let pasos = [];
+  let indice = 0;
+  let volverA = null;
 
-const objetivoDe = (id) => (id === "ayuda" ? $("ver-tour") : document.querySelector(`[data-tour="${id}"]`));
+  const visto = (id) => {
+    try {
+      return localStorage.getItem(`mando-tour:${id}`) !== null;
+    } catch {
+      return true; // sin almacenamiento: no insiste
+    }
+  };
+  const marcarVisto = (id) => guardado.escribir(`mando-tour:${id}`, new Date().toISOString());
 
-function mostrarPasoGuia() {
-  for (const el of document.querySelectorAll(".is-foco")) el.classList.remove("is-foco");
-  const paso = pasosVisibles[pasoGuia];
-  if (!paso) return terminarGuia();
-  const el = objetivoDe(paso.objetivo);
-  el.classList.add("is-foco");
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
-  $("tour-paso").textContent = `Paso ${pasoGuia + 1} de ${pasosVisibles.length}`;
-  $("tour-texto").textContent = typeof paso.texto === "function" ? paso.texto() : paso.texto;
-  $("tour-siguiente").textContent = pasoGuia === pasosVisibles.length - 1 ? "¡Listo!" : "Siguiente";
-}
+  function visible(objetivo) {
+    for (const sel of Array.isArray(objetivo) ? objetivo : [objetivo]) {
+      for (const el of document.querySelectorAll(sel)) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden") return el;
+      }
+    }
+    return null;
+  }
 
-function iniciarGuia() {
-  pasosVisibles = GUIA.filter((p) => objetivoDe(p.objetivo));
-  pasoGuia = 0;
-  $("tour").hidden = false;
-  mostrarPasoGuia();
-}
+  function ubicar() {
+    const paso = pasos[indice];
+    const el = paso && visible(paso.objetivo);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const PAD = 8;
+    const GAP = 12;
+    const MARGEN = 12;
+    Object.assign(hueco.style, {
+      top: `${r.top - PAD}px`,
+      left: `${r.left - PAD}px`,
+      width: `${r.width + PAD * 2}px`,
+      height: `${r.height + PAD * 2}px`,
+    });
+    const ancho = Math.min(380, innerWidth - MARGEN * 2);
+    const alto = tarjeta.offsetHeight || 220;
+    const izquierda = Math.min(Math.max(MARGEN, r.left + r.width / 2 - ancho / 2), innerWidth - ancho - MARGEN);
+    const abajo = r.bottom + PAD + GAP;
+    const arriba = r.top - PAD - GAP - alto;
+    const top = abajo + alto <= innerHeight - MARGEN ? abajo : arriba >= MARGEN ? arriba : innerHeight - alto - MARGEN;
+    Object.assign(tarjeta.style, { top: `${top}px`, left: `${izquierda}px`, width: `${ancho}px` });
+  }
 
-function terminarGuia() {
-  for (const el of document.querySelectorAll(".is-foco")) el.classList.remove("is-foco");
-  $("tour").hidden = true;
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
+  function pintar() {
+    const paso = pasos[indice];
+    const el = visible(paso.objetivo);
+    const r = el.getBoundingClientRect();
+    if (r.top < 80 || r.bottom > innerHeight - 260) {
+      scrollTo({ top: scrollY + r.top - 100, behavior: "instant" });
+    }
+    $("tour-etiqueta").textContent = actual.etiqueta;
+    $("tour-cuenta").textContent = `${indice + 1} de ${pasos.length}`;
+    $("tour-titulo").textContent = paso.titulo;
+    $("tour-texto").textContent = paso.texto;
+    $("tour-atras").hidden = indice === 0;
+    $("tour-saltar").hidden = indice === pasos.length - 1;
+    $("tour-siguiente").textContent = indice === pasos.length - 1 ? "Listo" : "Siguiente →";
+    $("tour-puntos").replaceChildren(
+      ...pasos.map((_, i) => {
+        const punto = document.createElement("span");
+        if (i === indice) punto.className = "is-actual";
+        return punto;
+      }),
+    );
+    tarjeta.classList.remove("is-entrando");
+    void tarjeta.offsetWidth;
+    tarjeta.classList.add("is-entrando");
+    requestAnimationFrame(ubicar);
+    tarjeta.focus();
+  }
 
-$("tour-siguiente").addEventListener("click", () => {
-  pasoGuia += 1;
-  mostrarPasoGuia();
-});
-$("tour-saltar").addEventListener("click", terminarGuia);
-$("ver-tour").addEventListener("click", iniciarGuia);
+  function abrir(clave) {
+    const r = RECORRIDOS[clave];
+    pasos = r.pasos.filter((p) => visible(p.objetivo));
+    if (!pasos.length) return;
+    actual = r;
+    indice = 0;
+    volverA = document.activeElement;
+    capa.hidden = false;
+    document.documentElement.classList.add("sin-scroll");
+    pintar();
+  }
+
+  function cerrar() {
+    if (!actual) return;
+    marcarVisto(actual.id);
+    actual = null;
+    capa.hidden = true;
+    document.documentElement.classList.remove("sin-scroll");
+    volverA?.focus?.();
+  }
+
+  const mover = (delta) => {
+    const nuevo = indice + delta;
+    if (nuevo < 0) return;
+    if (nuevo >= pasos.length) return cerrar();
+    indice = nuevo;
+    pintar();
+  };
+
+  $("tour-siguiente").addEventListener("click", () => mover(1));
+  $("tour-atras").addEventListener("click", () => mover(-1));
+  $("tour-saltar").addEventListener("click", cerrar);
+  $("tour-cerrar").addEventListener("click", cerrar);
+  $("tour-fondo").addEventListener("click", cerrar);
+  addEventListener("keydown", (e) => {
+    if (!actual) return;
+    if (e.key === "Escape") cerrar();
+    else if (e.key === "ArrowRight") mover(1);
+    else if (e.key === "ArrowLeft") mover(-1);
+  });
+  addEventListener("resize", () => actual && ubicar());
+
+  return {
+    siPrimeraVez(clave) {
+      if (!navigator.webdriver && !actual && !visto(RECORRIDOS[clave].id)) abrir(clave);
+    },
+    // «?»: el de la pantalla en la que estás.
+    repetir: () => abrir(modo === "editar" ? "editar" : "mando"),
+  };
+})();
+
+$("ver-tour").addEventListener("click", () => recorrido.repetir());
 
 // ---------- Arranque ----------
 
 const codigoInicial = new URLSearchParams(location.search).get("c") || guardado.leer(CLAVE_CODIGO, sessionStorage);
-if (codigoInicial) $("codigo").value = codigoInicial;
-
-if (guardado.leer(CLAVE_ONBOARDING) === "hecho" && codigoInicial) {
-  conectar(codigoInicial, { desdeOnboarding: false });
-} else if (guardado.leer(CLAVE_ONBOARDING) === "hecho") {
-  irPaso(3);
+if (codigoInicial) {
+  $("codigo").value = codigoInicial;
+  conectar(codigoInicial); // entró por el QR: directo al mando
 } else {
-  irPaso(1);
+  pantallaCodigo();
 }

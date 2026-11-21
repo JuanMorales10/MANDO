@@ -63,6 +63,26 @@
   box-shadow: var(--m-interior);
   text-align: center;
 }
+.pro__qr-hint {
+  margin: 0 0 1.2vh;
+  font-weight: 700;
+  font-size: clamp(0.75rem, 0.95vw, 1rem);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--m-texto-primario, #a99fff);
+}
+.pro__qr {
+  display: block;
+  width: min(100%, 220px, 24vh);
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 auto 1.6vh;
+  padding: 12px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--m-borde, #2a2e3d), 0 12px 32px rgba(108, 92, 255, 0.35);
+}
+.pro__qr[hidden] { display: none; }
 
 .pro__etiqueta {
   margin: 0;
