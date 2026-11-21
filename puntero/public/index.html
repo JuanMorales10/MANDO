@@ -35,6 +35,11 @@
         <button class="pt__activar" id="activar" type="button">Activar puntero</button>
         <p class="pt__aviso" id="aviso" role="status"></p>
 
+        <div class="pt__calibrar" id="calibrar-caja" role="status" hidden>
+          <p class="pt__calibrar-paso" id="calibrar-paso"></p>
+          <p class="pt__calibrar-texto" id="calibrar-texto"></p>
+        </div>
+
         <p class="pt__alerta" id="sin-clics" hidden>
           El cursor se mueve, pero la Mac todavía no dio permiso para hacer clic
           (Ajustes del Sistema → Privacidad y seguridad → Accesibilidad).
@@ -80,6 +85,7 @@
           <label class="pt__check"><input id="inv-x" type="checkbox" /> Invertir izquierda/derecha</label>
           <label class="pt__check"><input id="inv-y" type="checkbox" /> Invertir arriba/abajo</label>
         </div>
+        <button class="pt__boton" id="calibrar" type="button">Calibrar de nuevo</button>
         <button class="pt__boton pt__boton--cortar" id="cortar" type="button">Desconectar</button>
       </section>
     </main>

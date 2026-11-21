@@ -172,16 +172,16 @@ mountRemote($("mando-root"), (accion) => {
 
 const guardados = (() => {
   try {
-    return JSON.parse(localStorage.getItem("mando-puntero-v1")) || {};
+    return JSON.parse(localStorage.getItem("mando-puntero-v2")) || {};
   } catch {
     return {};
   }
 })();
-const ajustes = { velocidad: 22, apretar: false, invX: false, invY: false, ...guardados };
+const ajustes = { velocidad: 20, apretar: false, invX: false, invY: false, ...guardados };
 
 function guardar() {
   try {
-    localStorage.setItem("mando-puntero-v1", JSON.stringify(ajustes));
+    localStorage.setItem("mando-puntero-v2", JSON.stringify(ajustes));
   } catch {
     /* sin almacenamiento, sigue andando */
   }
@@ -234,6 +234,10 @@ function vaciar() {
 requestAnimationFrame(vaciar);
 
 // ---------- Puntero por movimiento del teléfono ----------
+//
+// El teléfono informa su velocidad de giro en tres ejes propios. En vez de suponer qué eje
+// es "derecha" y cuál "arriba" (cambia según el teléfono y cómo lo agarres), se aprende con
+// dos gestos: girar a la derecha y apuntar hacia arriba. Así la dirección nunca queda invertida.
 
 const esIOS = typeof DeviceMotionEvent !== "undefined" &&
   typeof DeviceMotionEvent.requestPermission === "function";
@@ -245,8 +249,90 @@ let suaveX = 0;
 let suaveY = 0;
 let llegaronDatos = false;
 
-const ZONA_MUERTA = 0.8; // grados por segundo: por debajo de esto no se mueve
-const SUAVIZADO = 0.45;
+const UMBRAL = 0.35; // grados por segundo que se descuentan: tapa el temblor del sensor en reposo
+
+let ejes = ajustes.ejes && Array.isArray(ajustes.ejes.x) && Array.isArray(ajustes.ejes.y) ? ajustes.ejes : null;
+let pausaHasta = 0;
+let calibracion = null; // { paso: "derecha" | "quieto" | "arriba", suma: [x,y,z], quietoDesde, x }
+
+const punto = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const largo = (a) => Math.hypot(a[0], a[1], a[2]);
+const unitario = (a) => {
+  const l = largo(a) || 1;
+  return [a[0] / l, a[1] / l, a[2] / l];
+};
+
+function empezarCalibracion() {
+  calibracion = { paso: "derecha", suma: [0, 0, 0], quietoDesde: 0, x: null };
+  suaveX = 0;
+  suaveY = 0;
+  pintarCalibracion();
+}
+
+function pintarCalibracion() {
+  const caja = $("calibrar-caja");
+  if (!calibracion) {
+    caja.hidden = true;
+    return;
+  }
+  caja.hidden = false;
+  const textos = {
+    derecha: ["Paso 1 de 2", "Agarrá el teléfono como un control remoto y girálo hacia la DERECHA →"],
+    quieto: ["¡Bien!", "Ahora dejalo quieto un instante…"],
+    arriba: ["Paso 2 de 2", "Ahora apuntá hacia ARRIBA ↑"],
+  };
+  $("calibrar-paso").textContent = textos[calibracion.paso][0];
+  $("calibrar-texto").textContent = textos[calibracion.paso][1];
+}
+
+function calibrar(w, dt, ahora) {
+  const c = calibracion;
+  const rapidez = largo(w);
+  if (c.paso === "quieto") {
+    if (rapidez > 12) c.quietoDesde = 0;
+    else if (!c.quietoDesde) c.quietoDesde = ahora;
+    else if (ahora - c.quietoDesde > 350) {
+      c.paso = "arriba";
+      c.suma = [0, 0, 0];
+      pintarCalibracion();
+    }
+    return;
+  }
+  // Se junta el giro mientras el gesto es claro; con 14 grados girados alcanza.
+  if (rapidez > 20) for (let i = 0; i < 3; i++) c.suma[i] += w[i] * dt;
+  if (largo(c.suma) < 14) return;
+  if (c.paso === "derecha") {
+    c.x = unitario(c.suma);
+    c.paso = "quieto";
+    c.quietoDesde = 0;
+    if (navigator.vibrate) navigator.vibrate(20);
+    pintarCalibracion();
+    return;
+  }
+  // "Arriba" tiene que ser un giro distinto al de "derecha"; se le quita lo que tenga en común.
+  const crudo = unitario(c.suma);
+  const comun = punto(crudo, c.x);
+  if (Math.abs(comun) > 0.8) {
+    c.suma = [0, 0, 0];
+    $("calibrar-texto").textContent = "Ese giro se pareció al anterior. Apuntá hacia ARRIBA ↑ (como mirando el techo).";
+    return;
+  }
+  const y = unitario([crudo[0] - comun * c.x[0], crudo[1] - comun * c.x[1], crudo[2] - comun * c.x[2]]);
+  ejes = { x: c.x, y };
+  ajustes.ejes = ejes;
+  ajustes.invX = false;
+  ajustes.invY = false;
+  $("inv-x").checked = false;
+  $("inv-y").checked = false;
+  guardar();
+  calibracion = null;
+  pintarCalibracion();
+  if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
+  // Medio segundo de gracia para volver al frente; después el cursor arranca desde el centro.
+  pausaHasta = performance.now() + 600;
+  setTimeout(() => enviar({ t: "z" }), 550);
+  aviso.textContent = "Listo. Mové el teléfono: despacio es fino, rápido cruza la pantalla.";
+}
 
 function alMoverse(e) {
   const r = e.rotationRate;
@@ -257,38 +343,35 @@ function alMoverse(e) {
   const dt = Math.min(0.05, ultimo ? (ahora - ultimo) / 1000 : 0);
   ultimo = ahora;
   if (!giroActivo || dt === 0) return;
+
+  const w = [r.alpha || 0, r.beta || 0, r.gamma || 0]; // grados por segundo
+  if (calibracion) {
+    calibrar(w, dt, ahora);
+    return;
+  }
+  if (!ejes || ahora < pausaHasta) return;
   if (ajustes.apretar && !apoyado) {
     suaveX = 0;
     suaveY = 0;
     return;
   }
 
-  // Giro del teléfono en sus propios ejes (grados por segundo).
-  // Los navegadores entregan: alpha = giro sobre el eje X del teléfono (cabecear),
-  // beta = sobre el eje Y (rolar) y gamma = sobre el eje Z (girar acostado).
-  const wx = r.alpha || 0;
-  const wy = r.beta || 0;
-  const wz = r.gamma || 0;
+  let vx = punto(w, ejes.x); // positivo = hacia la derecha
+  let vy = punto(w, ejes.y); // positivo = hacia arriba
+  vx = Math.sign(vx) * Math.max(0, Math.abs(vx) - UMBRAL);
+  vy = Math.sign(vy) * Math.max(0, Math.abs(vy) - UMBRAL);
 
-  // Giro a izquierda/derecha = giro alrededor de la vertical real (la gravedad),
-  // así funciona con el teléfono acostado o parado.
-  const g = e.accelerationIncludingGravity;
-  let giroLateral = wz;
-  if (g && g.x != null) {
-    const largo = Math.hypot(g.x, g.y, g.z);
-    if (largo > 1) giroLateral = (wx * g.x + wy * g.y + wz * g.z) / largo;
-    if (esIOS) giroLateral = -giroLateral; // iOS informa la gravedad con el signo opuesto
-  }
-  let giroVertical = wx;
+  // Suavizado que se adapta: firme cuando vas despacio (no tiembla), suelto cuando vas rápido (no se atrasa).
+  const rapidez = Math.hypot(vx, vy);
+  const mezcla = Math.max(0.25, Math.min(0.85, rapidez / 60));
+  suaveX += (vx - suaveX) * mezcla;
+  suaveY += (vy - suaveY) * mezcla;
 
-  if (Math.abs(giroLateral) < ZONA_MUERTA) giroLateral = 0;
-  if (Math.abs(giroVertical) < ZONA_MUERTA) giroVertical = 0;
-
-  suaveX += (giroLateral - suaveX) * SUAVIZADO;
-  suaveY += (giroVertical - suaveY) * SUAVIZADO;
-
-  const k = ajustes.velocidad * dt; // píxeles por grado girado
-  accX += -suaveX * k * (ajustes.invX ? -1 : 1);
+  // Aceleración: despacio = movimiento fino para apuntar; rápido = cruza la pantalla.
+  const v = Math.hypot(suaveX, suaveY);
+  const curva = Math.max(0.3, Math.min(1.8, Math.pow(v / 45, 0.65)));
+  const k = ajustes.velocidad * curva * dt; // píxeles por grado girado
+  accX += suaveX * k * (ajustes.invX ? -1 : 1);
   accY += -suaveY * k * (ajustes.invY ? -1 : 1);
 }
 
@@ -312,6 +395,8 @@ function pintarActivar() {
 activar.onclick = async () => {
   if (giroActivo) {
     giroActivo = false;
+    calibracion = null;
+    pintarCalibracion();
     pintarActivar();
     aviso.textContent = "Puntero en pausa.";
     return;
@@ -339,12 +424,28 @@ activar.onclick = async () => {
   ultimo = 0;
   pintarActivar();
   mantenerDespierto();
-  aviso.textContent = "Mové el teléfono como un puntero láser.";
+  if (ejes) {
+    aviso.textContent = "Mové el teléfono: despacio es fino, rápido cruza la pantalla.";
+  } else {
+    aviso.textContent = "";
+    empezarCalibracion();
+  }
   setTimeout(() => {
     if (giroActivo && !llegaronDatos) {
+      calibracion = null;
+      pintarCalibracion();
       aviso.textContent = "El sensor de movimiento no responde. Usá la zona táctil.";
     }
   }, 1500);
+};
+
+$("calibrar").onclick = () => {
+  if (!giroActivo) {
+    ejes = null;
+    activar.click();
+    return;
+  }
+  empezarCalibracion();
 };
 
 // ---------- Zona táctil: arrastrar mueve, toque corto hace clic ----------

@@ -261,3 +261,30 @@ body {
 .pt__pad {
   height: 34vh;
 }
+
+.pt__calibrar {
+  padding: 16px;
+  border-radius: 16px;
+  background: #c9f76a;
+  color: #101522;
+  text-align: center;
+}
+
+.pt__calibrar[hidden] {
+  display: none;
+}
+
+.pt__calibrar-paso {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pt__calibrar-texto {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.2;
+}
