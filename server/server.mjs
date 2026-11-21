@@ -154,9 +154,15 @@ export function crearServidor({ codigo, conectores = [], pasoVolumen = 1, log = 
       if (url.pathname === "/api/info" && req.method === "GET") {
         if (!esLocal(req)) return json(res, 403, { error: "Solo desde la notebook" });
         const puerto = server.address()?.port;
+        const urls = direccionesLan().map(
+          (ip) => `http://${ip}:${puerto}/celular.html?c=${sala.codigo}`,
+        );
+        if (urls.length === 0) {
+          urls.push(`http://127.0.0.1:${puerto}/celular.html?c=${sala.codigo}`);
+        }
         return json(res, 200, {
           codigo: sala.codigo,
-          urls: direccionesLan().map((ip) => `http://${ip}:${puerto}/celular.html`),
+          urls,
           ...paquete(),
         });
       }
@@ -235,8 +241,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   app.server.listen(puerto, "0.0.0.0", () => {
     console.log("\nMANDO · Tu control, a tu manera");
     console.log(`Proyector:  http://localhost:${puerto}/proyector.html`);
-    for (const ip of direccionesLan()) console.log(`Celular:    http://${ip}:${puerto}/celular.html`);
+    for (const ip of direccionesLan()) {
+      console.log(`Celular:    http://${ip}:${puerto}/celular.html?c=${app.sala.codigo}`);
+    }
     console.log(`Código:     ${app.sala.codigo}`);
-    console.log(`Conectores: ${conectores.map((c) => c.nombre).join(", ") || "ninguno (solo TV simulada)"}\n`);
+    console.log(`Conectores: ${conectores.map((c) => c.nombre).join(", ") || "ninguno (solo TV simulada)"}`);
+    console.log("Escaneá el QR del proyector (misma WiFi). Con puntero: npm run sala:puntero\n");
   });
 }
