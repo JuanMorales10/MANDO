@@ -1,0 +1,121 @@
+.cel {
+  margin: 0;
+  min-height: 100dvh;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 1rem)
+    1rem
+    calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  background:
+    radial-gradient(100% 70% at 50% -10%, #1a2740 0%, transparent 55%),
+    linear-gradient(180deg, var(--azul-noche) 0%, var(--azul-profundo) 100%);
+  color: var(--marfil);
+  font-family: var(--font-ui);
+}
+
+.cel__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cel__marca {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.cel__estado {
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--borde);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.cel__estado[data-estado="on"] {
+  border-color: var(--lima);
+  color: var(--azul-noche);
+  background: var(--lima);
+}
+
+.cel__estado[data-estado="off"] {
+  color: var(--marfil-suave);
+}
+
+.cel__gate {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 24rem;
+  margin: 2rem auto 0;
+  text-align: center;
+}
+
+.cel__titulo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.cel__texto {
+  margin: 0;
+  color: var(--marfil-suave);
+  font-weight: 600;
+}
+
+.cel__form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.cel__input {
+  width: 100%;
+  min-height: 3.25rem;
+  border: 2px solid var(--borde);
+  border-radius: 1rem;
+  padding: 0.75rem;
+  background: var(--azul-panel);
+  color: var(--marfil);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-align: center;
+}
+
+.cel__btn {
+  appearance: none;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--lima);
+  color: var(--azul-noche);
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cel__error {
+  margin: 0;
+  min-height: 1.3em;
+  color: #ff8f8f;
+  font-weight: 700;
+}
+
+.cel__mando {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cel__tv {
+  margin: 0;
+  text-align: center;
+  color: var(--lima);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}

@@ -1,0 +1,121 @@
+.pro {
+  margin: 0;
+  min-height: 100dvh;
+  background:
+    radial-gradient(90% 60% at 20% 0%, rgba(201, 247, 106, 0.1), transparent 55%),
+    var(--azul-noche, #101522);
+  color: var(--marfil, #f5f4ee);
+  font-family: var(--font-ui, Manrope, system-ui, sans-serif);
+}
+
+.pro__escena {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  min-height: 100dvh;
+  padding: 1rem;
+}
+
+.pro__tv-wrap {
+  min-width: 0;
+  align-self: center;
+}
+
+.pro__lado {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.55rem;
+  padding: 1.25rem;
+  border: 1px solid var(--borde, #2c354c);
+  border-radius: 1.25rem;
+  background: var(--azul-panel, #161d2e);
+  text-align: center;
+}
+
+.pro__marca {
+  margin: 0;
+  font-family: var(--font-display, Syne, sans-serif);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.pro__tag {
+  margin: 0 0 0.5rem;
+  color: var(--marfil-suave, #c8c6bc);
+  font-weight: 700;
+}
+
+.pro__qr-box {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  margin: 0.35rem 0;
+}
+
+.pro__qr {
+  width: min(70vw, 240px);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 1rem;
+  background: #fff;
+  padding: 0.65rem;
+}
+
+.pro__qr-hint {
+  margin: 0;
+  color: var(--lima, #c9f76a);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pro__codigo-titulo {
+  margin: 0.5rem 0 0;
+  color: var(--marfil-suave, #c8c6bc);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pro__codigo {
+  margin: 0;
+  font-family: var(--font-display, Syne, sans-serif);
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--lima, #c9f76a);
+}
+
+.pro__url {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--marfil-suave, #c8c6bc);
+  font-size: 0.9rem;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.pro__aviso {
+  margin: 0.75rem 0 0;
+  min-height: 1.4em;
+  color: var(--marfil, #f5f4ee);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+@media (min-width: 960px) {
+  .pro__escena {
+    grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 22rem);
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+  }
+
+  .pro__lado {
+    justify-items: center;
+  }
+}

@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/tv-state.test.mjs",
-    "start": "npx --yes serve public"
+    "start": "npx --yes serve public",
+    "sala": "node server/server.mjs"
   }
 }

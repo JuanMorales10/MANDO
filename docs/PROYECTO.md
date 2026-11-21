@@ -58,15 +58,21 @@ Layout del mando: `localStorage` clave `mando-layout-v1`.
 ```sh
 git clone https://github.com/JuanMorales10/MANDO.git
 cd MANDO
-npx serve public
-# o: python3 -m http.server -d public 3000
+npm start
+# demo de una sola página (Vercel / sin sala)
 ```
 
-Demo con servidor (cuando exista el modo celular en `main`):
+### Celular + QR (misma WiFi)
 
 ```sh
-node server/server.mjs
+npm run sala
 ```
+
+1. En la notebook/proyector abrí `http://localhost:8080/proyector.html`.
+2. Escaneá el **QR** con el celular (o entrá a la URL que muestra la pantalla).
+3. El mando del teléfono controla la TV de la notebook.
+
+Código fijo opcional: `SALA=1234 npm run sala`.
 
 ## Equipo
 

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101522" />
+    <title>MANDO · Proyector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./identidad.css" />
+    <link rel="stylesheet" href="./tv.css" />
+    <link rel="stylesheet" href="./proyector.css" />
+  </head>
+  <body class="pro">
+    <main class="pro__escena">
+      <section class="pro__tv-wrap" aria-label="TV">
+        <div id="tv-root"></div>
+      </section>
+
+      <aside class="pro__lado" aria-label="Unirse con el celular">
+        <p class="pro__marca">MANDO</p>
+        <p class="pro__tag">Tu control, a tu manera</p>
+
+        <div class="pro__qr-box">
+          <img id="qr" class="pro__qr" alt="Código QR para unirse con el celular" width="240" height="240" />
+          <p class="pro__qr-hint">Escaneá con el celular</p>
+        </div>
+
+        <p class="pro__codigo-titulo">Código</p>
+        <p class="pro__codigo" id="codigo">····</p>
+        <p class="pro__url" id="url"></p>
+        <p class="pro__aviso" id="aviso" role="status" aria-live="polite"></p>
+      </aside>
+    </main>
+    <script type="module" src="./proyector.js"></script>
+  </body>
+</html>

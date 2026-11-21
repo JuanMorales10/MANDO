@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#101522" />
+    <title>MANDO · Celular</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./identidad.css" />
+    <link rel="stylesheet" href="./remote.css" />
+    <link rel="stylesheet" href="./celular.css" />
+  </head>
+  <body class="cel">
+    <header class="cel__top">
+      <p class="cel__marca">MANDO</p>
+      <p class="cel__estado" id="conexion" data-estado="off">Sin conectar</p>
+    </header>
+
+    <section class="cel__gate" id="gate" aria-label="Código de sala">
+      <h1 class="cel__titulo">Entrá a la sala</h1>
+      <p class="cel__texto">
+        Escaneá el QR del proyector o escribí el código de 4 dígitos.
+      </p>
+      <form class="cel__form" id="form-codigo" autocomplete="off">
+        <input
+          id="codigo"
+          class="cel__input"
+          inputmode="numeric"
+          pattern="[0-9]{4}"
+          maxlength="4"
+          placeholder="0000"
+          aria-label="Código de 4 números"
+          required
+        />
+        <button class="cel__btn" type="submit">Conectar</button>
+      </form>
+      <p class="cel__error" id="error-codigo" role="alert"></p>
+    </section>
+
+    <section class="cel__mando" id="sala" hidden aria-label="Mando">
+      <p class="cel__tv" id="tv-chip">TV</p>
+      <div id="remote-root"></div>
+      <p class="cel__error" id="error" role="alert"></p>
+    </section>
+
+    <script type="module" src="./celular.js"></script>
+  </body>
+</html>
