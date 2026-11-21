@@ -114,7 +114,7 @@ function modoNube() {
   const sala = normalizarSala(params.get("sala") || "") || nuevaSala();
   if (params.get("sala") !== sala) history.replaceState(null, "", `${location.pathname}?sala=${sala}`);
   const joinUrl = `${location.origin}/celular?sala=${sala}`;
-  mostrarCodigo(sala, `${location.host}/celular`, joinUrl);
+  mostrarCodigo(sala, location.host, joinUrl); // en el celular, el mismo link abre el mando
 
   let state = initialState;
   let conectores = [];
