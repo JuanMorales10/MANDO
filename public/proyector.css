@@ -41,6 +41,24 @@
   padding: 2.5vh 1.5vw;
 }
 .pro__unirse h2 { opacity: 1; color: var(--lima, #C9F76A); }
+.pro__qr-hint {
+  margin: 0 0 1vh;
+  font-weight: 800;
+  font-size: clamp(0.95rem, 1.3vw, 1.35rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pro__qr {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 0 1.5vh;
+  padding: 10px;
+  border-radius: 16px;
+  background: #fff;
+}
+.pro__qr[hidden] { display: none; }
 .pro__url { margin: 0 0 2vh; font: 700 clamp(1rem, 1.5vw, 1.7rem)/1.3 ui-monospace, "SF Mono", Menlo, monospace; word-break: break-all; }
 .pro__codigo-titulo { margin: 0; opacity: 0.75; font-size: clamp(0.9rem, 1.2vw, 1.3rem); }
 .pro__codigo { margin: 0; font: 800 clamp(3rem, 6vw, 6.5rem)/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.12em; color: var(--lima, #C9F76A); }

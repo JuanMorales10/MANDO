@@ -58,15 +58,14 @@ Layout del mando: `localStorage` clave `mando-layout-v1`.
 ```sh
 git clone https://github.com/JuanMorales10/MANDO.git
 cd MANDO
-npx serve public
-# o: python3 -m http.server -d public 3000
+npm start          # demo de una página (como Vercel)
+npm run sala       # proyector + QR + celular (misma WiFi)
+npm run sala:puntero  # sala + puntero del teléfono → cursor Mac
 ```
 
-Demo con servidor (cuando exista el modo celular en `main`):
-
-```sh
-node server/server.mjs
-```
+1. Notebook: `http://localhost:8080/proyector.html`
+2. Escaneá el QR con el celular
+3. El mando del teléfono controla la TV (y con `sala:puntero`, también el cursor)
 
 ## Equipo
 

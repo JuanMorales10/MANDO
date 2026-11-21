@@ -2,7 +2,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/tv-state.test.mjs",
-    "start": "npx --yes serve public"
+    "test": "node --test tests/*.test.mjs",
+    "start": "npx --yes serve public",
+    "sala": "node server/server.mjs",
+    "sala:puntero": "node server/con-puntero.mjs"
   }
 }
