@@ -9,16 +9,18 @@
     <meta name="theme-color" content="#101522" />
     <meta
       name="description"
-      content="MANDO — Tu control, a tu manera. Configurá el mando y controlá la TV."
+      content="MANDO — Tu control, a tu manera. Configurá el mando y controlá canales de video."
     />
     <title>MANDO · Tu control, a tu manera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://commondatastorage.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Syne:wght@700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./identidad.css" />
+    <link rel="stylesheet" href="./tv.css" />
     <link rel="stylesheet" href="./remote.css" />
     <link rel="stylesheet" href="./demo.css" />
   </head>
@@ -31,15 +33,11 @@
         <p class="mando-demo__tagline">Tu control, a tu manera</p>
       </header>
 
-      <section
-        class="mando-demo__stage"
-        aria-label="Estado de la TV"
-        aria-live="polite"
-      >
-        <p class="mando-demo__eyebrow">TV</p>
-        <p id="action-log" class="mando-demo__log">Listo</p>
+      <section class="mando-demo__stage" aria-label="TV simulada">
+        <div id="tv-root"></div>
         <p class="mando-demo__coach">
-          Tocá un botón. En Editar, mové Silencio a donde te quede cómodo.
+          Usá Canal +/− para cambiar de video. Editar → mové Silencio → Usar →
+          tocá.
         </p>
       </section>
 

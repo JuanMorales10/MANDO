@@ -15,11 +15,11 @@
 
 | Pieza | Estado | Dónde |
 | --- | --- | --- |
-| Mando configurable | En `main` | `public/remote.js` + `remote.css` |
+| Mando configurable | En `main` / extendido | `public/remote.js` + `remote.css` |
 | UX mobile-first | En `main` | `public/index.html`, `demo.css`, `identidad.css` |
 | Demo estática | En producción | https://mando-one.vercel.app |
-| Motor de estado | PR abierto | [#6](https://github.com/JuanMorales10/MANDO/pull/6) · `tv-state.js` |
-| TV visual | PR abierto | [#7](https://github.com/JuanMorales10/MANDO/pull/7) · `tv.js` / `tv.css` |
+| Motor de estado | Integrado en demo de canales | `public/tv-state.js` |
+| TV + canales de video | Demo interactiva | `public/tv.js` / `tv.css` — 4 clips HTML5 |
 | Celular + proyector real | PR abierto | [#9](https://github.com/JuanMorales10/MANDO/pull/9) · `server/` + HTML celular |
 
 ## Arquitectura (contrato)

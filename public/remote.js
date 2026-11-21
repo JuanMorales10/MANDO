@@ -3,6 +3,11 @@ const COLS = 3;
 const ROWS = 4;
 
 const ACTIONS = {
+  POWER: {
+    id: "POWER",
+    label: "Power",
+    icon: "⏻",
+  },
   MUTE: {
     id: "MUTE",
     label: "Silencio",
@@ -10,28 +15,41 @@ const ACTIONS = {
   },
   VOL_UP: {
     id: "VOL_UP",
-    label: "Volumen +",
+    label: "Vol +",
     icon: "🔊",
   },
   VOL_DOWN: {
     id: "VOL_DOWN",
-    label: "Volumen −",
+    label: "Vol −",
     icon: "🔉",
+  },
+  CH_UP: {
+    id: "CH_UP",
+    label: "Canal +",
+    icon: "▲",
+  },
+  CH_DOWN: {
+    id: "CH_DOWN",
+    label: "Canal −",
+    icon: "▼",
   },
 };
 
 const DEFAULT_LAYOUT = {
-  MUTE: { row: 1, col: 1, size: "normal" },
-  VOL_UP: { row: 0, col: 2, size: "normal" },
+  POWER: { row: 0, col: 1, size: "normal" },
   VOL_DOWN: { row: 0, col: 0, size: "normal" },
+  VOL_UP: { row: 0, col: 2, size: "normal" },
+  MUTE: { row: 1, col: 1, size: "normal" },
+  CH_DOWN: { row: 3, col: 0, size: "normal" },
+  CH_UP: { row: 3, col: 2, size: "normal" },
 };
 
 function cloneLayout(layout) {
-  return {
-    MUTE: { ...layout.MUTE },
-    VOL_UP: { ...layout.VOL_UP },
-    VOL_DOWN: { ...layout.VOL_DOWN },
-  };
+  const next = {};
+  for (const id of Object.keys(ACTIONS)) {
+    next[id] = { ...(layout[id] || DEFAULT_LAYOUT[id]) };
+  }
+  return next;
 }
 
 function loadLayout() {
@@ -66,11 +84,7 @@ function loadLayout() {
       if (!fitted) return cloneLayout(DEFAULT_LAYOUT);
       next[id] = { row: fitted.row, col: fitted.col, size };
     }
-    return {
-      MUTE: { ...next.MUTE },
-      VOL_UP: { ...next.VOL_UP },
-      VOL_DOWN: { ...next.VOL_DOWN },
-    };
+    return cloneLayout(next);
   } catch {
     return cloneLayout(DEFAULT_LAYOUT);
   }
