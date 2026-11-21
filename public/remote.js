@@ -39,7 +39,7 @@ function loadLayout() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return cloneLayout(DEFAULT_LAYOUT);
     const parsed = JSON.parse(raw);
-    const next = cloneLayout(DEFAULT_LAYOUT);
+    const next = {};
     for (const id of Object.keys(ACTIONS)) {
       const item = parsed?.[id];
       if (!item) continue;
@@ -49,22 +49,40 @@ function loadLayout() {
       if (
         Number.isInteger(row) &&
         Number.isInteger(col) &&
-        row >= 0 &&
-        row < ROWS &&
-        col >= 0 &&
-        col < COLS
+        canPlace(next, id, row, col, size)
       ) {
         next[id] = { row, col, size };
       }
     }
-    return next;
+    for (const id of Object.keys(ACTIONS)) {
+      if (next[id]) continue;
+      const fallback = DEFAULT_LAYOUT[id];
+      let size = fallback.size;
+      let fitted = nearestFreeCell(next, id, fallback.row, fallback.col, size);
+      if (!fitted && size === "large") {
+        size = "normal";
+        fitted = nearestFreeCell(next, id, fallback.row, fallback.col, size);
+      }
+      if (!fitted) return cloneLayout(DEFAULT_LAYOUT);
+      next[id] = { row: fitted.row, col: fitted.col, size };
+    }
+    return {
+      MUTE: { ...next.MUTE },
+      VOL_UP: { ...next.VOL_UP },
+      VOL_DOWN: { ...next.VOL_DOWN },
+    };
   } catch {
     return cloneLayout(DEFAULT_LAYOUT);
   }
 }
 
 function saveLayout(layout) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function cellIndex(row, col) {
@@ -293,15 +311,24 @@ export function mountRemote(el, dispatch) {
     );
   }
 
+  function cancelDrag() {
+    const id = state.draggingId;
+    if (!id) return;
+    const btn = buttons[id];
+    state.draggingId = null;
+    if (btn) btn.style.pointerEvents = "";
+    clearDropTargets();
+  }
+
   function moveButton(id, row, col) {
     const current = state.layout[id];
     const target = nearestFreeCell(state.layout, id, row, col, current.size);
     if (!target) return false;
     if (target.row === current.row && target.col === current.col) return false;
     state.layout[id] = { ...current, row: target.row, col: target.col };
-    saveLayout(state.layout);
+    const saved = saveLayout(state.layout);
     placeButtons();
-    return true;
+    return saved ? true : "unsaved";
   }
 
   function setSize(id, size) {
@@ -313,7 +340,9 @@ export function mountRemote(el, dispatch) {
       return;
     }
     state.layout[id] = { row: fitted.row, col: fitted.col, size };
-    saveLayout(state.layout);
+    if (!saveLayout(state.layout)) {
+      setHint("No se pudo guardar el diseño en este navegador.", true);
+    }
     placeButtons();
   }
 
@@ -336,9 +365,8 @@ export function mountRemote(el, dispatch) {
   modes.addEventListener("click", (event) => {
     const button = event.target.closest(".mando-remote__mode");
     if (!button) return;
+    cancelDrag();
     state.mode = button.dataset.mode;
-    state.draggingId = null;
-    clearDropTargets();
     updateModeUI();
     placeButtons();
   });
@@ -368,12 +396,17 @@ export function mountRemote(el, dispatch) {
       Number(cell.dataset.row),
       Number(cell.dataset.col),
     );
-    if (moved) {
+    if (moved === true) {
       setHint("Diseño guardado. Seguí moviendo o pasá a Usar.", true);
+    } else if (moved === "unsaved") {
+      setHint("No se pudo guardar el diseño en este navegador.", true);
     }
   });
 
   for (const [id, btn] of Object.entries(buttons)) {
+    let dragOrigin = null;
+    let dragActive = false;
+
     btn.addEventListener("click", (event) => {
       if (state.mode !== "usar") {
         event.preventDefault();
@@ -388,7 +421,8 @@ export function mountRemote(el, dispatch) {
 
       state.selectedId = id;
       state.draggingId = id;
-      btn.style.pointerEvents = "none";
+      dragActive = false;
+      dragOrigin = { x: event.clientX, y: event.clientY };
       btn.setPointerCapture(event.pointerId);
       updateModeUI();
       placeButtons();
@@ -396,7 +430,14 @@ export function mountRemote(el, dispatch) {
     });
 
     btn.addEventListener("pointermove", (event) => {
-      if (state.draggingId !== id) return;
+      if (state.draggingId !== id || !dragOrigin) return;
+      const dx = event.clientX - dragOrigin.x;
+      const dy = event.clientY - dragOrigin.y;
+      if (!dragActive && dx * dx + dy * dy < 36) return;
+      if (!dragActive) {
+        dragActive = true;
+        btn.style.pointerEvents = "none";
+      }
       clearDropTargets();
       const cell = cellFromPoint(event.clientX, event.clientY);
       if (cell) cell.el.classList.add("is-drop-target");
@@ -404,13 +445,21 @@ export function mountRemote(el, dispatch) {
 
     const endDrag = (event) => {
       if (state.draggingId !== id) return;
-      const cell = cellFromPoint(event.clientX, event.clientY);
+      const cell = dragActive ? cellFromPoint(event.clientX, event.clientY) : null;
       state.draggingId = null;
+      dragOrigin = null;
+      dragActive = false;
       btn.style.pointerEvents = "";
       clearDropTargets();
       if (cell) {
-        moveButton(id, cell.row, cell.col);
-        setHint("Diseño guardado en este navegador.", true);
+        const moved = moveButton(id, cell.row, cell.col);
+        if (moved === true) {
+          setHint("Diseño guardado en este navegador.", true);
+        } else if (moved === "unsaved") {
+          setHint("No se pudo guardar el diseño en este navegador.", true);
+        } else {
+          placeButtons();
+        }
       } else {
         placeButtons();
       }
