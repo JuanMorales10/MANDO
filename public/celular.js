@@ -221,7 +221,7 @@ function conectarNube(sala) {
           // La compu tiene MANDO abierto con puntero: se ofrece (funciona en el mismo wifi).
           if (typeof m.puntero === "string" && /^https:\/\/[\d.]+:\d+\/puntero\//.test(m.puntero)) {
             $("abrir-puntero").href = m.puntero;
-            $("abrir-puntero").hidden = false;
+            $("abrir-puntero").dataset.listo = "si";
           }
         } else if (m.t === "acciones" && Array.isArray(m.a)) {
           // Otro celular tocó algo: lo reflejamos acá también.
@@ -543,6 +543,17 @@ $("mando").addEventListener("click", (evento) => {
   enviar(id);
 });
 
+// ---------- Puntero: siempre visible. Si la compu todavía no lo ofrece, avisa cómo activarlo. ----------
+
+$("abrir-puntero").addEventListener("click", (e) => {
+  if ($("abrir-puntero").dataset.listo === "si") return; // abre el puntero de la compu
+  e.preventDefault();
+  navigator.vibrate?.(20);
+  $("puntero-aviso").hidden = false;
+  clearTimeout(Number($("puntero-aviso").dataset.timer));
+  $("puntero-aviso").dataset.timer = String(setTimeout(() => ($("puntero-aviso").hidden = true), 6000));
+});
+
 // ---------- Barra de edición: tamaño, color y quitar del botón seleccionado ----------
 
 function pintarBarraEdicion() {
@@ -710,7 +721,7 @@ async function conectar(valor) {
     // así el aviso del certificado aparece solo si alguien elige usarlo.
     if (datos.punteroPuerto && location.protocol === "http:") {
       $("abrir-puntero").href = `https://${location.hostname}:${datos.punteroPuerto}/puntero/index.html?c=${encodeURIComponent(valor)}`;
-      $("abrir-puntero").hidden = false;
+      $("abrir-puntero").dataset.listo = "si";
     }
     abrirMando();
   } catch (error) {

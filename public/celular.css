@@ -689,3 +689,12 @@ svg { display: block; width: 100%; height: 100%; }
   cursor: pointer;
 }
 .mandy__chip:active { border-color: var(--m-primario); color: var(--m-texto-primario); }
+
+.app__puntero-aviso {
+  margin: -4px 0 0; padding: 10px 14px; border-radius: var(--m-radio-sm);
+  background: var(--m-elevado); border: 1px dashed rgba(108, 92, 255, 0.5);
+  color: var(--m-texto-2); font-size: 0.9rem; line-height: 1.4;
+}
+.app__puntero-aviso[hidden] { display: none; }
+.app__puntero-aviso strong { color: var(--m-texto); }
+.cel[data-modo="editar"] .app__puntero-aviso { display: none; }
