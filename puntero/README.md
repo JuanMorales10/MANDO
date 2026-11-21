@@ -63,5 +63,5 @@ Muchas Wi-Fi de eventos no dejan que los equipos se vean entre sí.
 
 - `cursor.swift`: ayudante mínimo que mueve el cursor, hace clic, rueda y teclas con `CGEvent`. Se compila solo la primera vez (necesita las Command Line Tools de Xcode).
 - `server.mjs`: HTTPS con certificado autofirmado (`.cert/`), WebSocket y, de respaldo, las mismas órdenes por POST. Sirve `remote.js`, `remote.css` e `identidad.css` del proyecto sin modificarlos.
-- `public/index.html`, `puntero.js`, `puntero.css`: la página del teléfono. Usa la velocidad de giro (`devicemotion.rotationRate`) proyectada sobre la gravedad, con zona muerta y suavizado.
+- `public/index.html`, `puntero.js`, `puntero.css`: la página del teléfono. Usa la velocidad de giro (`devicemotion.rotationRate`). Dos gestos de calibración le enseñan qué es «derecha» y «arriba», y la gravedad (acelerómetro) hace que siga andando aunque cambies la forma de agarrar el teléfono.
 - `public/pantalla.html`: la pantalla del QR para la Mac.
