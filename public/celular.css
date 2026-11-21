@@ -1,0 +1,73 @@
+/* Página del mando en el celular. Prefijo .cel */
+
+.cel {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--azul-noche, #101522);
+  color: var(--marfil, #F5F4EE);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.cel *, .cel *::before, .cel *::after { box-sizing: border-box; }
+
+.cel__barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cel__marca { font-weight: 800; letter-spacing: 0.12em; font-size: 1.1rem; }
+
+.cel__conexion {
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 244, 238, 0.35);
+}
+.cel__conexion[data-estado="on"] { color: #101522; background: var(--lima, #C9F76A); border-color: transparent; }
+.cel__conexion[data-estado="on"]::before { content: "● "; }
+
+.cel__entrar { display: grid; gap: 14px; max-width: 420px; margin: 12vh auto 0; text-align: center; }
+.cel__entrar[hidden], .cel__mando[hidden] { display: none; }
+.cel__entrar h1 { margin: 0; font-size: 2rem; }
+.cel__entrar p { margin: 0; opacity: 0.8; font-size: 1.1rem; }
+
+.cel__entrar input {
+  font: 700 2.6rem/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.4em;
+  text-align: center;
+  padding: 14px 0 14px 0.4em;
+  border-radius: 16px;
+  border: 2px solid rgba(245, 244, 238, 0.4);
+  background: transparent;
+  color: inherit;
+}
+.cel__entrar input:focus { outline: 3px solid var(--lima, #C9F76A); outline-offset: 2px; }
+
+.cel__entrar button,
+.cel__extra button {
+  font: 700 1.15rem/1.2 inherit;
+  min-height: 56px;
+  border-radius: 16px;
+  border: 2px solid var(--lima, #C9F76A);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.cel__entrar button { background: var(--lima, #C9F76A); color: #101522; }
+
+.cel__estado { margin: 0 0 12px; font-size: 1.2rem; font-weight: 700; min-height: 1.5em; }
+
+.cel__extra {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.cel__extra button { background: transparent; color: inherit; padding: 8px 6px; }
+.cel__extra button:active { background: var(--lima, #C9F76A); color: #101522; }
+
+.cel__error { color: #ff9b9b; font-weight: 600; min-height: 1.2em; margin: 8px 0 0; }

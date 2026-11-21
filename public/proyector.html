@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MANDO · Proyector</title>
+  <link rel="stylesheet" href="./identidad.css" />
+  <link rel="stylesheet" href="./tv.css" />
+  <link rel="stylesheet" href="./proyector.css" />
+</head>
+<body class="pro">
+  <main class="pro__escena">
+    <div id="tv" class="pro__tv"></div>
+    <aside class="pro__lado">
+      <p class="pro__marca">MANDO <span>Tu control, a tu manera</span></p>
+      <section class="pro__unirse" id="unirse" hidden>
+        <h2>Agarrá el control</h2>
+        <p class="pro__url" id="url"></p>
+        <p class="pro__codigo-titulo">Código</p>
+        <p class="pro__codigo" id="codigo"></p>
+      </section>
+      <section aria-label="Aparatos conectados">
+        <h2>Conectado a</h2>
+        <ul class="pro__conectores" id="conectores">
+          <li data-ok="true">TV simulada</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+  <p class="pro__aviso" id="aviso" role="status" aria-live="polite"></p>
+  <script type="module" src="./proyector.js"></script>
+</body>
+</html>
