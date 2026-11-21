@@ -2,6 +2,8 @@
 
 **Tu control, a tu manera.**
 
+**Demo:** https://mando-one.vercel.app · **Docs:** [Proyecto](./docs/PROYECTO.md) · [Features](./docs/FEATURES.md)
+
 Alguien del jurado mueve y agranda **Silencio**, vuelve al modo **Usar**, toca el botón reubicado y se silencia la TV simulada del proyector. La demo tiene que funcionar en una sola página y en una sola notebook, sin depender del celular, un QR ni la red entre máquinas.
 
 ## Quién hace qué
