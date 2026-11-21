@@ -1,6 +1,6 @@
 import { mountRemote } from "./remote.js";
 import { initialState, applyAction } from "./tv-state.js";
-import { renderTV } from "./tv.js";
+import { renderTV, unlockTVAudio } from "./tv.js";
 
 const remoteRoot = document.querySelector("#remote-root");
 const tvRoot = document.querySelector("#tv-root");
@@ -16,6 +16,7 @@ function paint() {
 }
 
 function dispatch(action) {
+  unlockTVAudio(tvRoot);
   state = applyAction(state, action);
   paint();
   console.log("dispatch", action, state);
@@ -24,10 +25,10 @@ function dispatch(action) {
 paint();
 mountRemote(remoteRoot, dispatch);
 
-// Tras el primer gesto del usuario, forzar play (autoplay policies).
 window.addEventListener(
   "pointerdown",
   () => {
+    unlockTVAudio(tvRoot);
     paint();
   },
   { once: true, passive: true },

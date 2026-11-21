@@ -8,31 +8,35 @@
 
 const ESTADO_BASE = { power: true, volume: 15, muted: false, channel: 1 };
 
-/** Catálogo de canales interactivos (HTML5). Índice = (channel - 1) % length */
+/**
+ * Catálogo de canales (HTML5).
+ * Fuentes públicas que responden 200 (el bucket gtv-videos de Google ahora da 403).
+ * Índice = (channel - 1) % length
+ */
 export const CHANNELS = [
   {
     id: 1,
-    name: "Cine",
-    tagline: "Big Buck Bunny",
-    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    name: "Naturaleza",
+    tagline: "Flor · MDN",
+    src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
   },
   {
     id: 2,
-    name: "Sueños",
-    tagline: "Elephants Dream",
-    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    name: "Corto",
+    tagline: "Sample 5s",
+    src: "https://samplelib.com/lib/preview/mp4/sample-5s.mp4",
   },
   {
     id: 3,
-    name: "Acción",
-    tagline: "For Bigger Blazes",
-    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    name: "Calle",
+    tagline: "Sample 10s",
+    src: "https://samplelib.com/lib/preview/mp4/sample-10s.mp4",
   },
   {
     id: 4,
     name: "Viaje",
-    tagline: "For Bigger Escapes",
-    src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    tagline: "Sample 15s",
+    src: "https://samplelib.com/lib/preview/mp4/sample-15s.mp4",
   },
 ];
 
@@ -58,7 +62,8 @@ const ICONO_SILENCIO = `
 const PLANTILLA = `
 <section class="mando-tv" aria-label="TV simulada">
   <div class="mando-tv__pantalla">
-    <video class="mando-tv__video" playsinline loop preload="metadata"></video>
+    <video class="mando-tv__video" playsinline loop preload="auto" crossorigin="anonymous"></video>
+    <p class="mando-tv__error" data-tv="error" hidden>No se pudo cargar este canal</p>
     <div class="mando-tv__scrim" aria-hidden="true"></div>
 
     <header class="mando-tv__barra">
@@ -129,18 +134,31 @@ function ensureShell(el) {
   return tv;
 }
 
-function syncVideo(video, s, meta) {
+function syncVideo(video, s, meta, errorNode) {
   if (!video) return;
+
+  if (!video.dataset.bound) {
+    video.dataset.bound = "1";
+    video.addEventListener("error", () => {
+      if (errorNode) errorNode.hidden = false;
+    });
+    video.addEventListener("loadeddata", () => {
+      if (errorNode) errorNode.hidden = true;
+    });
+  }
 
   const nextSrc = meta.src;
   const currentSrc = video.getAttribute("data-channel-src");
   if (currentSrc !== nextSrc) {
+    if (errorNode) errorNode.hidden = true;
     video.setAttribute("data-channel-src", nextSrc);
     video.src = nextSrc;
     video.load();
   }
 
-  video.muted = s.muted || !s.power;
+  // Autoplay: los browsers suelen exigir mute en el primer play.
+  const wantsSound = s.power && !s.muted;
+  video.muted = s.muted || !s.power || !video.dataset.unlocked;
   video.volume = Math.min(1, Math.max(0, s.volume / 100));
 
   if (!s.power) {
@@ -151,8 +169,13 @@ function syncVideo(video, s, meta) {
   const playPromise = video.play();
   if (playPromise && typeof playPromise.catch === "function") {
     playPromise.catch(() => {
-      // Autoplay bloqueado hasta el primer gesto del mando.
+      video.muted = true;
+      video.play().catch(() => {});
     });
+  }
+
+  if (wantsSound && video.dataset.unlocked) {
+    video.muted = s.muted;
   }
 }
 
@@ -187,5 +210,16 @@ export function renderTV(el, state) {
   const nivel = tv.querySelector('[data-tv="nivel"]');
   if (nivel) nivel.style.width = `${s.volume}%`;
 
-  syncVideo(video, s, meta);
+  const errorNode = tv.querySelector('[data-tv="error"]');
+  syncVideo(video, s, meta, errorNode);
+}
+
+/** Llamar tras el primer gesto del usuario para habilitar audio. */
+export function unlockTVAudio(el) {
+  const video = el?.querySelector?.(".mando-tv__video");
+  if (!video) return;
+  video.dataset.unlocked = "1";
+  if (video.paused) {
+    video.play().catch(() => {});
+  }
 }

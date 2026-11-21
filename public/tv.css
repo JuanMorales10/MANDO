@@ -57,6 +57,25 @@
   z-index: 0;
 }
 
+.mando-tv__error {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  padding: 2cqi;
+  background: rgba(5, 7, 13, 0.82);
+  color: var(--tv-acento);
+  font-size: max(var(--tv-piso), 3cqi);
+  font-weight: 800;
+  text-align: center;
+}
+
+.mando-tv__error[hidden] {
+  display: none;
+}
+
 .mando-tv__scrim {
   position: absolute;
   inset: 0;
