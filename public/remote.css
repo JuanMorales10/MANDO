@@ -1,21 +1,21 @@
 .mando-remote {
-  --mando-bg: #101522;
-  --mando-fg: #f5f4ee;
-  --mando-accent: #c9f76a;
-  --mando-muted: #8b93a7;
-  --mando-cell: #1a2133;
-  --mando-border: #2a3348;
+  --mando-bg: transparent;
+  --mando-fg: var(--marfil, #f5f4ee);
+  --mando-accent: var(--lima, #c9f76a);
+  --mando-muted: var(--marfil-suave, #c8c6bc);
+  --mando-cell: var(--azul-celda, #1c2438);
+  --mando-border: var(--borde, #2c354c);
+  --mando-panel: var(--azul-panel, #161d2e);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-3, 0.75rem);
   width: 100%;
-  max-width: 28rem;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0;
   color: var(--mando-fg);
   background: var(--mando-bg);
-  font-family: system-ui, "Segoe UI", sans-serif;
+  font-family: var(--font-ui, "Manrope", sans-serif);
 }
 
 .mando-remote *,
@@ -25,50 +25,59 @@
 }
 
 .mando-remote__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  display: grid;
+  gap: var(--space-3, 0.75rem);
 }
 
 .mando-remote__title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  display: none;
 }
 
 .mando-remote__modes {
-  display: inline-flex;
-  border: 2px solid var(--mando-border);
-  border-radius: 999px;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border: 1px solid var(--mando-border);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--mando-panel);
 }
 
 .mando-remote__mode {
   appearance: none;
+  min-height: var(--touch, 3rem);
   border: 0;
+  border-radius: var(--radius-pill, 999px);
   margin: 0;
-  padding: 0.55rem 0.9rem;
+  padding: 0.65rem 0.75rem;
   background: transparent;
   color: var(--mando-muted);
   font: inherit;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease;
 }
 
 .mando-remote__mode.is-active {
   background: var(--mando-accent);
-  color: var(--mando-bg);
+  color: var(--azul-noche, #101522);
+}
+
+.mando-remote__mode:active {
+  transform: scale(0.98);
 }
 
 .mando-remote__hint {
   margin: 0;
-  min-height: 1.4em;
+  min-height: 1.35em;
+  padding: 0 var(--space-1, 0.25rem);
   color: var(--mando-muted);
   font-size: 0.95rem;
+  font-weight: 700;
   line-height: 1.35;
+  text-align: center;
 }
 
 .mando-remote__hint.is-edit {
@@ -77,68 +86,74 @@
 
 .mando-remote__toolbar {
   display: none;
-  gap: 0.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2, 0.5rem);
 }
 
 .mando-remote.is-edit .mando-remote__toolbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
 }
 
 .mando-remote__tool {
   appearance: none;
-  border: 2px solid var(--mando-border);
-  border-radius: 0.65rem;
-  padding: 0.55rem 0.85rem;
+  min-height: var(--touch, 3rem);
+  border: 1px solid var(--mando-border);
+  border-radius: var(--radius-md, 1rem);
+  padding: 0.65rem 0.75rem;
   background: var(--mando-cell);
   color: var(--mando-fg);
   font: inherit;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .mando-remote__tool:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .mando-remote__tool.is-active {
   border-color: var(--mando-accent);
-  color: var(--mando-bg);
   background: var(--mando-accent);
+  color: var(--azul-noche, #101522);
 }
 
 .mando-remote__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(4.5rem, auto));
-  gap: 0.65rem;
-  padding: 0.65rem;
-  border: 2px solid var(--mando-border);
-  border-radius: 1rem;
-  background: #0c101a;
+  grid-template-rows: repeat(4, minmax(var(--touch, 3rem), 1fr));
+  gap: 0.7rem;
+  min-height: 18rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mando-border);
+  border-radius: var(--radius-lg, 1.35rem);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
+    var(--azul-profundo, #0a0e18);
   touch-action: none;
   user-select: none;
 }
 
 .mando-remote__cell {
-  min-height: 4.5rem;
+  min-height: var(--touch, 3rem);
   border: 1px dashed transparent;
-  border-radius: 0.85rem;
-  background: var(--mando-cell);
+  border-radius: var(--radius-md, 1rem);
+  background: rgba(28, 36, 56, 0.55);
   pointer-events: none;
 }
 
 .mando-remote.is-edit .mando-remote__cell {
-  border-color: var(--mando-border);
+  border-color: rgba(44, 53, 76, 0.95);
   pointer-events: auto;
 }
 
 .mando-remote__cell.is-drop-target {
-  outline: 2px solid var(--mando-accent);
-  outline-offset: 2px;
-  background: #243018;
+  border-style: solid;
+  border-color: var(--mando-accent);
+  background: rgba(201, 247, 106, 0.16);
+  box-shadow: inset 0 0 0 1px var(--mando-accent);
 }
 
 .mando-remote__btn {
@@ -147,22 +162,27 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
+  gap: 0.25rem;
   width: 100%;
   height: 100%;
-  min-height: 4.5rem;
+  min-height: var(--touch, 3rem);
   margin: 0;
-  padding: 0.35rem;
-  border: 3px solid var(--mando-accent);
-  border-radius: 0.8rem;
-  background: #151c2d;
+  padding: 0.45rem;
+  border: 2px solid rgba(201, 247, 106, 0.55);
+  border-radius: var(--radius-md, 1rem);
+  background: linear-gradient(180deg, #1f2940 0%, #151c2d 100%);
   color: var(--mando-fg);
   font: inherit;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
   line-height: 1.1;
   cursor: pointer;
   touch-action: none;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .mando-remote__btn:focus-visible {
@@ -171,7 +191,8 @@
 }
 
 .mando-remote__btn.is-selected {
-  box-shadow: 0 0 0 3px var(--mando-accent);
+  border-color: var(--mando-accent);
+  box-shadow: 0 0 0 3px rgba(201, 247, 106, 0.35);
 }
 
 .mando-remote__btn.is-dragging {
@@ -180,7 +201,10 @@
 }
 
 .mando-remote__btn--large {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
+  border-width: 3px;
+  border-color: var(--mando-accent);
+  background: linear-gradient(180deg, #2a3820 0%, #1a2418 100%);
 }
 
 .mando-remote__icon {
@@ -190,11 +214,15 @@
 }
 
 .mando-remote__btn--large .mando-remote__icon {
-  font-size: 2rem;
+  font-size: 2.1rem;
 }
 
 .mando-remote__label {
   display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mando-remote.is-edit .mando-remote__btn {
@@ -205,7 +233,37 @@
   cursor: grabbing;
 }
 
+.mando-remote.is-edit .mando-remote__btn::after {
+  content: "⋮⋮";
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  color: rgba(245, 244, 238, 0.45);
+  font-size: 0.7rem;
+  letter-spacing: -0.08em;
+  line-height: 1;
+}
+
+.mando-remote__btn {
+  position: relative;
+}
+
 .mando-remote.is-use .mando-remote__btn:active {
-  transform: scale(0.97);
-  background: #1f2a18;
+  transform: scale(0.96);
+  border-color: var(--mando-accent);
+  background: #243018;
+}
+
+@media (min-width: 900px) {
+  .mando-remote__grid {
+    min-height: 24rem;
+  }
+
+  .mando-remote__btn {
+    font-size: 1.05rem;
+  }
+
+  .mando-remote__hint {
+    font-size: 1rem;
+  }
 }

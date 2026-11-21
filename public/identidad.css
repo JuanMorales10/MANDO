@@ -1,5 +1,80 @@
 :root {
   --azul-noche: #101522;
-  --marfil: #F5F4EE;
-  --lima: #C9F76A;
+  --azul-profundo: #0a0e18;
+  --azul-panel: #161d2e;
+  --azul-celda: #1c2438;
+  --marfil: #f5f4ee;
+  --marfil-suave: #c8c6bc;
+  --lima: #c9f76a;
+  --lima-soft: #a8d94f;
+  --borde: #2c354c;
+  --peligro: #ff6b6b;
+  --ok: #c9f76a;
+
+  --font-display: "Syne", "Avenir Next", "Segoe UI", sans-serif;
+  --font-ui: "Manrope", "Segoe UI", system-ui, sans-serif;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  --radius-sm: 0.65rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.35rem;
+  --radius-pill: 999px;
+
+  --touch: 3rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  color-scheme: dark;
+  background: var(--azul-noche);
+  color: var(--marfil);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #1a2740 0%, transparent 55%),
+    linear-gradient(180deg, var(--azul-noche) 0%, var(--azul-profundo) 100%);
+  color: var(--marfil);
+}
+
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--lima);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
