@@ -245,6 +245,20 @@ const TRAZOS = {
 const svgDe = (trazos) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${trazos}</svg>`;
 
+// Logos de las apps (SVG en línea, sin pedir nada a internet). Solo visual: el nombre sigue como texto y aria-label.
+const LOGOS = {
+  APP_NETFLIX:
+    '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#000"/><path d="M13 8h5v24l-5 1z" fill="#b1060f"/><path d="M22 8h5v25l-5-1z" fill="#b1060f"/><path d="M13 8h5l9 25h-5z" fill="#e50914"/></svg>',
+  APP_YOUTUBE:
+    '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#fff"/><rect x="6" y="11" width="28" height="18" rx="5.5" fill="#ff0033"/><path d="M17.5 15.5v9l8-4.5z" fill="#fff"/></svg>',
+  APP_DISNEY:
+    '<svg viewBox="0 0 40 40"><defs><linearGradient id="lg-disney" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c4ce0"/><stop offset="1" stop-color="#0b1b57"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#lg-disney)"/><path d="M7 21c6-9 20-11 27-3" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".9"/><text x="17" y="31" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-style="italic" font-weight="700" font-size="15" fill="#fff">D</text><path d="M27 23v8M23 27h8" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  APP_PRIME:
+    '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#00a8e1"/><text x="20" y="21" text-anchor="middle" font-family="system-ui, -apple-system, Helvetica, Arial, sans-serif" font-weight="800" font-size="10.5" letter-spacing="-.3" fill="#fff">prime</text><path d="M9 25c6 4.5 16 4.5 22 0" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M28 23.2l3.4 1.6-1.4 3.4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  APP_SPOTIFY:
+    '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#121212"/><circle cx="20" cy="20" r="13" fill="#1db954"/><g fill="none" stroke="#121212" stroke-linecap="round"><path d="M12 16.5c5.5-1.8 11.5-1.3 16 1.3" stroke-width="2.6"/><path d="M13 20.8c4.6-1.4 9.4-1 13 1.1" stroke-width="2.2"/><path d="M14 24.8c3.6-1 7.2-.7 10 .9" stroke-width="1.8"/></g></svg>',
+};
+
 function crearBoton(b, { favorito = false } = {}) {
   const el = document.createElement("button");
   el.type = "button";
@@ -256,7 +270,13 @@ function crearBoton(b, { favorito = false } = {}) {
   el.dataset.favorito = String(config.favoritos.includes(b.id));
   el.setAttribute("aria-label", b.nombre);
 
-  if (b.icono) {
+  if (LOGOS[b.id]) {
+    const logo = document.createElement("span");
+    logo.className = "boton__logo";
+    logo.setAttribute("aria-hidden", "true");
+    logo.innerHTML = LOGOS[b.id];
+    el.append(logo);
+  } else if (b.icono) {
     const icono = document.createElement("span");
     icono.className = "boton__icono";
     icono.setAttribute("aria-hidden", "true");
