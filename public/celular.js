@@ -98,10 +98,10 @@ function mostrarEstado({ state, conectores = [] }) {
   estadoTV = state;
   body.dataset.tv = !state.power ? "apagada" : state.muted ? "silencio" : "sonando";
   $("estado-principal").textContent = !state.power
-    ? "⏻ Apagada"
+    ? "Apagada"
     : state.muted
-      ? "🔇 Silencio"
-      : `🔊 Volumen ${state.volume}`;
+      ? "Silencio"
+      : `Volumen ${state.volume}`;
   const caidos = conectores.filter((c) => !c.ok);
   $("estado-detalle").textContent = [
     `Canal ${state.channel}`,
@@ -118,6 +118,31 @@ function marcarActivos() {
 
 // ---------- Dibujo del mando ----------
 
+// Íconos de línea (solo visual): reemplazan los emojis del catálogo cuando hay uno.
+const PARLANTE = '<path d="M11 5 6 9H3v6h3l5 4z"/>';
+const TRAZOS = {
+  POWER: '<path d="M12 3v9"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
+  INPUT: '<path d="M4 8h14l-3-3"/><path d="M20 16H6l3 3"/>',
+  MUTE: `${PARLANTE}<path d="m16 9.5 5 5M21 9.5l-5 5"/>`,
+  VOL_DOWN: `${PARLANTE}<path d="M15.5 12h5"/>`,
+  VOL_UP: `${PARLANTE}<path d="M15.5 12h5M18 9.5v5"/>`,
+  CH_DOWN: '<path d="m6 9 6 6 6-6"/>',
+  CH_UP: '<path d="m6 15 6-6 6 6"/>',
+  UP: '<path d="m6 15 6-6 6 6"/>',
+  DOWN: '<path d="m6 9 6 6 6-6"/>',
+  LEFT: '<path d="m15 6-6 6 6 6"/>',
+  RIGHT: '<path d="m9 6 6 6-6 6"/>',
+  BACK: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  HOME: '<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.5V20h4.5v-5.5h4V20h4.5V9.5"/>',
+  MENU: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  REWIND: '<path d="M11 6.5 4.5 12l6.5 5.5zM19.5 6.5 13 12l6.5 5.5z"/>',
+  PLAY_PAUSE: '<path d="M4 6.5v11l7.5-5.5z"/><path d="M15.5 6.5v11M20 6.5v11"/>',
+  FORWARD: '<path d="m13 6.5 6.5 5.5-6.5 5.5zM4.5 6.5 11 12l-6.5 5.5z"/>',
+  FULLSCREEN: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+};
+const svgDe = (trazos) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${trazos}</svg>`;
+
 function crearBoton(b, { favorito = false } = {}) {
   const el = document.createElement("button");
   el.type = "button";
@@ -133,7 +158,10 @@ function crearBoton(b, { favorito = false } = {}) {
     const icono = document.createElement("span");
     icono.className = "boton__icono";
     icono.setAttribute("aria-hidden", "true");
-    icono.textContent = b.icono;
+    if (TRAZOS[b.id]) {
+      icono.classList.add("boton__icono--svg");
+      icono.innerHTML = svgDe(TRAZOS[b.id]);
+    } else icono.textContent = b.icono;
     el.append(icono);
   }
   if (!b.soloIcono || favorito) {

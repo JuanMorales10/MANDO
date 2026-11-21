@@ -59,6 +59,12 @@ const ICONO_SILENCIO = `
         fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
 </svg>`;
 
+const ICONO_ENCENDIDO = `
+<svg class="mando-tv__icono" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+  <path d="M24 6v17" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  <path d="M14.5 12.5a15 15 0 1 0 19 0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg>`;
+
 const PLANTILLA = `
 <section class="mando-tv" aria-label="TV simulada">
   <div class="mando-tv__pantalla">
@@ -67,32 +73,35 @@ const PLANTILLA = `
     <div class="mando-tv__scrim" aria-hidden="true"></div>
 
     <header class="mando-tv__barra">
-      <span class="mando-tv__titulo">TV SIMULADA</span>
-      <span class="mando-tv__canal" data-tv="canal-badge"></span>
+      <div class="mando-tv__vidrio mando-tv__canal-pill">
+        <span class="mando-tv__canal" data-tv="canal-badge"></span>
+        <span class="mando-tv__nombre" data-tv="canal-nombre"></span>
+      </div>
+      <span class="mando-tv__vivo">EN VIVO</span>
     </header>
 
     <div class="mando-tv__hud">
-      <div class="mando-tv__chip" data-tv="canal-nombre"></div>
-      <div class="mando-tv__chip mando-tv__chip--vol">
+      <div class="mando-tv__vidrio mando-tv__chip mando-tv__chip--vol">
         ${ICONO_SONIDO}
-        <span data-tv="volumen"></span>
+        <div class="mando-tv__medidor" aria-hidden="true">
+          <div class="mando-tv__medidor-nivel" data-tv="nivel"></div>
+        </div>
+        <span class="mando-tv__vol-num" data-tv="volumen"></span>
       </div>
     </div>
 
     <div class="mando-tv__centro mando-tv__centro--silencio">
-      <div class="mando-tv__aviso">${ICONO_SILENCIO}<span>SILENCIO</span></div>
-      <div class="mando-tv__guardado">Volumen guardado <b data-tv="volumen-guardado"></b></div>
+      <div class="mando-tv__aviso">
+        ${ICONO_SILENCIO}
+        <span class="mando-tv__aviso-texto">SILENCIO</span>
+        <span class="mando-tv__guardado">Volumen guardado <b data-tv="volumen-guardado"></b></span>
+      </div>
     </div>
 
     <div class="mando-tv__centro mando-tv__centro--apagada">
-      <div class="mando-tv__apagada">TV APAGADA</div>
-    </div>
-
-    <div class="mando-tv__medidor" aria-hidden="true">
-      <div class="mando-tv__medidor-nivel" data-tv="nivel"></div>
+      <div class="mando-tv__apagada">${ICONO_ENCENDIDO}<span>TV apagada</span></div>
     </div>
   </div>
-  <div class="mando-tv__pie" aria-hidden="true"></div>
   <p class="mando-tv__lector" role="status" aria-live="polite" data-tv="lector"></p>
 </section>`;
 

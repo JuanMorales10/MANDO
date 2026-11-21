@@ -1,0 +1,34 @@
+/* MANDO · Rediseño «Moderno» — tokens compartidos.
+   Fuente de verdad: Figma «MANDO · Control maestro», colección de variables «Moderno».
+   Plus Jakarta Sans se carga con <link> a Google Fonts en cada página; si no hay internet cae a system-ui. */
+
+:root {
+  --m-fondo: #07080d;
+  --m-superficie: #12141c;
+  --m-elevado: #1b1e29;
+  --m-tecla: #232736;
+  --m-borde: #2a2e3d;
+
+  --m-primario: #6c5cff;
+  --m-primario-suave: #221e4a;
+  --m-cian: #22d3ee;
+  --m-degradado: linear-gradient(90deg, #7b5cff 0%, #22d3ee 100%);
+  --m-brillo: 0 10px 28px rgba(108, 92, 255, 0.45);
+
+  --m-encendido: #ff5a6e;
+  --m-ok: #34e0a1;
+  --m-aviso: #ffb547;
+
+  --m-texto: #f4f5fa;
+  --m-texto-2: #9097ad;
+  --m-texto-primario: #a99fff;
+  --m-sobre-color: #ffffff;
+
+  --m-radio-sm: 14px;
+  --m-radio: 22px;
+  --m-radio-lg: 28px;
+  --m-radio-xl: 36px;
+
+  --m-fuente: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --m-interior: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
