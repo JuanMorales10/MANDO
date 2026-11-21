@@ -1,0 +1,40 @@
+:root { --fondo: #101522; --texto: #F5F4EE; --acento: #C9F76A; --panel: #1b2236; --borde: #2c3550; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--fondo); color: var(--texto);
+  font: 18px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+  overscroll-behavior: none; touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+}
+header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.estado { font-size: 14px; padding: 4px 10px; border-radius: 99px; background: var(--panel); border: 1px solid var(--borde); }
+.estado.ok { background: var(--acento); color: var(--fondo); border-color: var(--acento); font-weight: 600; }
+.estado.mal { background: #5a1f2a; border-color: #a33; }
+section { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+section[hidden] { display: none; }
+#inicio { justify-content: center; text-align: center; }
+button {
+  font: inherit; font-weight: 600; color: var(--texto);
+  background: var(--panel); border: 2px solid var(--borde); border-radius: 16px;
+  min-height: 60px; padding: 10px 14px; flex: 1;
+}
+button:active { background: var(--borde); }
+button.grande { background: var(--acento); color: var(--fondo); border-color: var(--acento); font-size: 24px; min-height: 96px; flex: none; }
+button.peligro { flex: none; border-color: #a33; min-height: 52px; }
+.pad {
+  flex: 1; min-height: 160px; border-radius: 20px;
+  border: 2px dashed var(--acento); background: var(--panel);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 22px; font-weight: 600; touch-action: none;
+}
+.pad.apretado { background: #26304a; border-style: solid; }
+.pad small { font-weight: 400; font-size: 14px; opacity: .75; }
+.fila { display: flex; gap: 12px; }
+.opcion { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.opcion.chica { font-size: 15px; flex: 1; }
+.opcion input[type=checkbox] { width: 26px; height: 26px; accent-color: var(--acento); }
+.opcion input[type=range] { flex: 1; accent-color: var(--acento); height: 32px; }
+.aviso { color: #ffd27a; font-size: 16px; }

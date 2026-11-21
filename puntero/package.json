@@ -1,0 +1,15 @@
+{
+  "name": "mando-puntero",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Usar el teléfono como puntero en el aire para la Mac",
+  "type": "module",
+  "scripts": {
+    "build": "swiftc -O helper/cursor.swift -o helper/cursor",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.18.0"
+  }
+}
