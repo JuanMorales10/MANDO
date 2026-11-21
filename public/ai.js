@@ -1,5 +1,5 @@
 /**
- * Home = TV + QR + chat Mandy (notebook).
+ * /ai = TV + QR + chat Mandy (notebook).
  * El mando completo sigue en /celular?c=CODIGO
  */
 
@@ -33,8 +33,16 @@ function pintarAhora() {
 }
 
 function paint() {
-  renderTV(tvEl, state);
-  pintarAhora();
+  try {
+    renderTV(tvEl, state);
+  } catch (error) {
+    console.warn("TV render:", error);
+  }
+  try {
+    pintarAhora();
+  } catch {
+    // ignore
+  }
 }
 
 function avisar(ultima) {
@@ -75,28 +83,52 @@ function montarMandy() {
   if (!root || asistenteListo) return;
   asistenteListo = true;
   let calladoPorMic = false;
-  mandy = mountAsistente({
-    root,
-    origen: "notebook",
-    getCodigo: () => codigo,
-    enviar: enviarAccion,
-    onMicInicio: async () => {
-      if (state && !state.muted) {
-        calladoPorMic = true;
-        await enviarAccion("MUTE");
-      }
-    },
-    onMicFin: async () => {
-      if (calladoPorMic) {
-        calladoPorMic = false;
-        if (state?.muted) await enviarAccion("MUTE");
-      }
-    },
-  });
+  try {
+    mandy = mountAsistente({
+      root,
+      origen: "notebook",
+      getCodigo: () => codigo,
+      enviar: enviarAccion,
+      onMicInicio: async () => {
+        if (state && !state.muted) {
+          calladoPorMic = true;
+          await enviarAccion("MUTE");
+        }
+      },
+      onMicFin: async () => {
+        if (calladoPorMic) {
+          calladoPorMic = false;
+          if (state?.muted) await enviarAccion("MUTE");
+        }
+      },
+    });
+  } catch (error) {
+    console.warn("Mandy:", error);
+  }
 }
 
-function qrSrc(data) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=6&data=${encodeURIComponent(data)}`;
+/** Varias fuentes por si una CDN bloquea el hotlink. */
+function fuentesQr(texto) {
+  const q = encodeURIComponent(texto);
+  return [
+    `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=6&data=${q}`,
+    `https://quickchart.io/qr?size=280&margin=2&text=${q}`,
+  ];
+}
+
+function pintarQr(img, texto) {
+  if (!img || !texto) return;
+  const fuentes = fuentesQr(texto);
+  let i = 0;
+  img.referrerPolicy = "no-referrer";
+  img.decoding = "async";
+  img.onerror = () => {
+    i += 1;
+    if (i < fuentes.length) img.src = fuentes[i];
+  };
+  img.hidden = false;
+  img.src = fuentes[0];
+  img.alt = `QR para abrir ${texto}`;
 }
 
 async function refrescarPuntero() {
@@ -106,17 +138,16 @@ async function refrescarPuntero() {
   if (!bloque || !link) return;
 
   const codigoQ = codigo ? `?c=${encodeURIComponent(codigo)}` : "";
-  link.href = `/puntero/${codigoQ}`;
+  link.href = `/puntero/index.html${codigoQ}`;
 
   // Local (npm run sala:puntero / MANDO.command): el server expone /puntero/info.
   try {
     const res = await fetch("/puntero/info", { cache: "no-store" });
     if (res.ok) {
-      const info = await res.json();
+      const info = await res.json().catch(() => null);
       if (info?.puntero) {
         bloque.dataset.listo = "1";
-        texto.textContent = "Listo en esta compu · abrí desde el celu o acá";
-        // info.url es el celular; el puntero vive en /puntero/
+        if (texto) texto.textContent = "Listo en esta compu · abrí desde el celu o acá";
         link.href = `/puntero/index.html${codigoQ}`;
         return;
       }
@@ -126,28 +157,28 @@ async function refrescarPuntero() {
   }
 
   bloque.dataset.listo = "0";
-  texto.textContent = "Mové el celu y movés el cursor de la compu";
+  if (texto) texto.textContent = "Mové el celu y movés el cursor de la compu";
 }
 
 function mostrarSala(info) {
   codigo = info.codigo;
   const joinUrl =
     info.urls?.[0] || `${location.origin}/celular?c=${info.codigo}`;
+
+  // Primero el QR (aunque falle la TV o Mandy).
   $("codigo").textContent = info.codigo;
   $("url").textContent = joinUrl.replace(/^https?:\/\//, "");
   $("link-cel").href = `/celular?c=${encodeURIComponent(info.codigo)}`;
-  const qr = $("qr");
-  qr.hidden = false;
-  qr.src = qrSrc(joinUrl);
-  qr.alt = `QR para abrir Mandy en ${joinUrl}`;
+  pintarQr($("qr"), joinUrl);
   $("unirse").hidden = false;
+
   ultimaVista = info.ultima?.hora || 0;
   aplicar(info);
   montarMandy();
-  refrescarPuntero();
+  refrescarPuntero().catch(() => {});
 }
 
-// Si abrís / desde el teléfono, saltá directo al mando + Mandy.
+// Si abrís /ai desde el teléfono, saltá directo al mando + Mandy.
 const ua = navigator.userAgent || "";
 const esMovil = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
 if (esMovil && !new URLSearchParams(location.search).has("tv")) {
@@ -160,9 +191,19 @@ try {
   const res = await fetch("/api/info");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   mostrarSala(await res.json());
-} catch {
+} catch (error) {
+  console.warn("Sala:", error);
   $("aviso").textContent = "No se pudo abrir la sala. Recargá la página.";
   $("aviso").classList.add("is-visible");
+  // Fallback: igual mostramos un QR a /celular con el código fijo de demo.
+  const fallback = `${location.origin}/celular?c=2026`;
+  $("codigo").textContent = "2026";
+  $("url").textContent = fallback.replace(/^https?:\/\//, "");
+  $("link-cel").href = `/celular?c=2026`;
+  pintarQr($("qr"), fallback);
+  $("unirse").hidden = false;
+  codigo = "2026";
+  montarMandy();
 }
 
 setInterval(async () => {
@@ -175,7 +216,6 @@ setInterval(async () => {
   }
 }, 700);
 
-// Si arrancás MANDO.command después, el bloque pasa a «listo».
 setInterval(() => {
   refrescarPuntero().catch(() => {});
 }, 4000);

@@ -1,48 +1,19 @@
 /**
- * TV simulada con canales de video.
+ * TV simulada con canales de YouTube.
  * Contrato: renderTV(el, state) — se llama al iniciar y tras cada cambio.
  *
- * Canales: clips públicos (Google sample / MDN). CH_UP/DOWN ciclan la grilla.
- * MUTE / VOL / POWER controlan el <video> en vivo.
+ * Canal +/− cambia de video embebido. MUTE / VOL / POWER controlan el player.
  */
 
-const ESTADO_BASE = { power: true, volume: 15, muted: false, channel: 1 };
+import { CHANNELS } from "./catalogo.js";
 
-/**
- * Catálogo de canales (HTML5).
- * Fuentes públicas que responden 200 (el bucket gtv-videos de Google ahora da 403).
- * Índice = (channel - 1) % length
- */
-export const CHANNELS = [
-  {
-    id: 1,
-    name: "Naturaleza",
-    tagline: "Flor · MDN",
-    src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-  },
-  {
-    id: 2,
-    name: "Corto",
-    tagline: "Sample 5s",
-    src: "https://samplelib.com/lib/preview/mp4/sample-5s.mp4",
-  },
-  {
-    id: 3,
-    name: "Calle",
-    tagline: "Sample 10s",
-    src: "https://samplelib.com/lib/preview/mp4/sample-10s.mp4",
-  },
-  {
-    id: 4,
-    name: "Viaje",
-    tagline: "Sample 15s",
-    src: "https://samplelib.com/lib/preview/mp4/sample-15s.mp4",
-  },
-];
+export { CHANNELS };
+
+const ESTADO_BASE = { power: true, volume: 55, muted: false, channel: 1 };
 
 export const ejemplosTV = {
-  normal: { power: true, volume: 15, muted: false, channel: 1 },
-  silenciado: { power: true, volume: 15, muted: true, channel: 1 },
+  normal: { power: true, volume: 55, muted: false, channel: 1 },
+  silenciado: { power: true, volume: 55, muted: true, channel: 1 },
 };
 
 const ICONO_SONIDO = `
@@ -59,51 +30,83 @@ const ICONO_SILENCIO = `
         fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
 </svg>`;
 
-const ICONO_ENCENDIDO = `
-<svg class="mando-tv__icono" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-  <path d="M24 6v17" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M14.5 12.5a15 15 0 1 0 19 0" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-</svg>`;
-
 const PLANTILLA = `
 <section class="mando-tv" aria-label="TV simulada">
   <div class="mando-tv__pantalla">
-    <video class="mando-tv__video" playsinline loop preload="auto" crossorigin="anonymous"></video>
+    <div class="mando-tv__player" data-tv="player"></div>
     <p class="mando-tv__error" data-tv="error" hidden>No se pudo cargar este canal</p>
+    <button type="button" class="mando-tv__activar-audio" data-tv="activar-audio">
+      Tocá para activar el sonido
+    </button>
     <div class="mando-tv__scrim" aria-hidden="true"></div>
 
     <header class="mando-tv__barra">
-      <div class="mando-tv__vidrio mando-tv__canal-pill">
-        <span class="mando-tv__canal" data-tv="canal-badge"></span>
-        <span class="mando-tv__nombre" data-tv="canal-nombre"></span>
-      </div>
-      <span class="mando-tv__vivo">EN VIVO</span>
+      <span class="mando-tv__titulo">TV SIMULADA</span>
+      <span class="mando-tv__canal" data-tv="canal-badge"></span>
     </header>
 
     <div class="mando-tv__hud">
-      <div class="mando-tv__vidrio mando-tv__chip mando-tv__chip--vol">
+      <div class="mando-tv__chip" data-tv="canal-nombre"></div>
+      <div class="mando-tv__chip mando-tv__chip--vol">
         ${ICONO_SONIDO}
-        <div class="mando-tv__medidor" aria-hidden="true">
-          <div class="mando-tv__medidor-nivel" data-tv="nivel"></div>
-        </div>
-        <span class="mando-tv__vol-num" data-tv="volumen"></span>
+        <span data-tv="volumen"></span>
       </div>
     </div>
 
     <div class="mando-tv__centro mando-tv__centro--silencio">
-      <div class="mando-tv__aviso">
-        ${ICONO_SILENCIO}
-        <span class="mando-tv__aviso-texto">SILENCIO</span>
-        <span class="mando-tv__guardado">Volumen guardado <b data-tv="volumen-guardado"></b></span>
-      </div>
+      <div class="mando-tv__aviso">${ICONO_SILENCIO}<span>SILENCIO</span></div>
+      <div class="mando-tv__guardado">Volumen guardado <b data-tv="volumen-guardado"></b></div>
     </div>
 
     <div class="mando-tv__centro mando-tv__centro--apagada">
-      <div class="mando-tv__apagada">${ICONO_ENCENDIDO}<span>TV apagada</span></div>
+      <div class="mando-tv__apagada">TV APAGADA</div>
+    </div>
+
+    <div class="mando-tv__medidor" aria-hidden="true">
+      <div class="mando-tv__medidor-nivel" data-tv="nivel"></div>
     </div>
   </div>
+  <div class="mando-tv__pie" aria-hidden="true"></div>
   <p class="mando-tv__lector" role="status" aria-live="polite" data-tv="lector"></p>
 </section>`;
+
+/** @type {WeakMap<Element, object>} */
+const hosts = new WeakMap();
+
+let ytApiPromise = null;
+
+function loadYouTubeApi() {
+  if (typeof window === "undefined") return Promise.reject(new Error("sin window"));
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (ytApiPromise) return ytApiPromise;
+
+  ytApiPromise = new Promise((resolve, reject) => {
+    const done = () => {
+      if (window.YT?.Player) resolve(window.YT);
+      else reject(new Error("YouTube API no lista"));
+    };
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      try {
+        prev?.();
+      } catch {
+        // ignore
+      }
+      done();
+    };
+    if (!document.querySelector('script[data-mando-yt="1"]')) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.async = true;
+      script.dataset.mandoYt = "1";
+      script.onerror = () => reject(new Error("No se pudo cargar YouTube"));
+      document.head.appendChild(script);
+    }
+    if (window.YT?.Player) done();
+  });
+
+  return ytApiPromise;
+}
 
 function channelMeta(channel) {
   const n = Number(channel) || 1;
@@ -140,52 +143,169 @@ function ensureShell(el) {
     tv = el.querySelector(":scope > .mando-tv");
   }
   el.classList.add("mando-tv-anfitrion");
+  if (!hosts.has(el)) hosts.set(el, {});
   return tv;
 }
 
-function syncVideo(video, s, meta, errorNode) {
-  if (!video) return;
+function destroyPlayer(ctx, mount) {
+  try {
+    ctx.player?.destroy?.();
+  } catch {
+    // ignore
+  }
+  ctx.player = null;
+  ctx.videoId = null;
+  ctx.creating = false;
+  ctx.broken = false;
+  if (mount) mount.replaceChildren();
+}
 
-  if (!video.dataset.bound) {
-    video.dataset.bound = "1";
-    video.addEventListener("error", () => {
+function applyPlayerState(ctx, s) {
+  const player = ctx.player;
+  if (!player || typeof player.mute !== "function") return;
+
+  // Volumen audible en demo: el motor usa 0–100; YouTube también.
+  const vol = Math.min(100, Math.max(0, s.volume));
+  try {
+    player.setVolume(vol);
+  } catch {
+    // ignore
+  }
+
+  const silence = !s.power || s.muted || !ctx.unlocked || ctx.micDucking;
+  try {
+    if (silence) player.mute();
+    else {
+      player.unMute();
+      player.setVolume(vol);
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    if (!s.power) {
+      player.pauseVideo();
+      return;
+    }
+    const state = player.getPlayerState?.();
+    // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+    if (state !== 1 && state !== 3) player.playVideo();
+  } catch {
+    // ignore
+  }
+}
+
+function createPlayer(el, mount, meta, errorNode) {
+  const ctx = hosts.get(el);
+  if (!ctx || ctx.creating) return;
+  ctx.creating = true;
+
+  loadYouTubeApi()
+    .then((YT) => {
+      // Si ya cambiaron de canal mientras cargaba la API, usamos el pending.
+      const wanted =
+        channelMeta(ctx.pending?.channel ?? meta.number).youtube || meta.youtube;
+
+      destroyPlayer(ctx, mount);
+      ctx.creating = true;
+
+      const host = document.createElement("div");
+      host.className = "mando-tv__yt";
+      mount.append(host);
+
+      ctx.player = new YT.Player(host, {
+        width: "100%",
+        height: "100%",
+        videoId: wanted,
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          rel: 0,
+          playsinline: 1,
+          mute: 1,
+          iv_load_policy: 3,
+          origin: location.origin,
+        },
+        events: {
+          onReady: () => {
+            ctx.videoId = wanted;
+            ctx.creating = false;
+            ctx.broken = false;
+            if (errorNode) errorNode.hidden = true;
+            // Si el canal pidió otro video durante el create, cárgalo.
+            const nowId = channelMeta(ctx.pending?.channel ?? meta.number).youtube;
+            if (nowId && nowId !== wanted) {
+              try {
+                ctx.player.loadVideoById({ videoId: nowId, startSeconds: 0 });
+                ctx.videoId = nowId;
+              } catch {
+                destroyPlayer(ctx, mount);
+                createPlayer(el, mount, channelMeta(ctx.pending.channel), errorNode);
+                return;
+              }
+            }
+            if (ctx.pending) applyPlayerState(ctx, ctx.pending);
+          },
+          onError: () => {
+            // Player roto: destruir para que el próximo Canal +/− monte uno nuevo.
+            ctx.broken = true;
+            ctx.creating = false;
+            if (errorNode) errorNode.hidden = false;
+            destroyPlayer(ctx, mount);
+          },
+          onStateChange: (ev) => {
+            // Solo loop en VODs; las radios en vivo no “terminan”.
+            const live = channelMeta(ctx.pending?.channel ?? 1).live;
+            if (ev.data === 0 && ctx.pending?.power && !live) {
+              try {
+                ctx.player.seekTo(0, true);
+                ctx.player.playVideo();
+              } catch {
+                // ignore
+              }
+            }
+          },
+        },
+      });
+    })
+    .catch(() => {
+      ctx.creating = false;
+      ctx.broken = true;
       if (errorNode) errorNode.hidden = false;
     });
-    video.addEventListener("loadeddata", () => {
-      if (errorNode) errorNode.hidden = true;
-    });
-  }
+}
 
-  const nextSrc = meta.src;
-  const currentSrc = video.getAttribute("data-channel-src");
-  if (currentSrc !== nextSrc) {
-    if (errorNode) errorNode.hidden = true;
-    video.setAttribute("data-channel-src", nextSrc);
-    video.src = nextSrc;
-    video.load();
-  }
+function ensurePlayer(el, mount, meta, errorNode) {
+  const ctx = hosts.get(el);
+  if (!ctx) return;
 
-  // Autoplay: los browsers suelen exigir mute en el primer play.
-  const wantsSound = s.power && !s.muted;
-  video.muted = s.muted || !s.power || !video.dataset.unlocked;
-  video.volume = Math.min(1, Math.max(0, s.volume / 100));
-
-  if (!s.power) {
-    video.pause();
+  // Tras un error, o sin player: crear de nuevo.
+  if (!ctx.player || ctx.broken) {
+    createPlayer(el, mount, meta, errorNode);
     return;
   }
 
-  const playPromise = video.play();
-  if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => {
-      video.muted = true;
-      video.play().catch(() => {});
-    });
+  if (ctx.videoId !== meta.youtube) {
+    if (errorNode) errorNode.hidden = true;
+    try {
+      ctx.player.loadVideoById({
+        videoId: meta.youtube,
+        startSeconds: 0,
+      });
+      ctx.videoId = meta.youtube;
+    } catch {
+      // loadVideoById falló → recrear player limpio
+      destroyPlayer(ctx, mount);
+      createPlayer(el, mount, meta, errorNode);
+      return;
+    }
   }
 
-  if (wantsSound && video.dataset.unlocked) {
-    video.muted = s.muted;
-  }
+  if (ctx.pending) applyPlayerState(ctx, ctx.pending);
 }
 
 /**
@@ -195,9 +315,11 @@ export function renderTV(el, state) {
   if (!el) return;
 
   const tv = ensureShell(el);
-  const video = tv.querySelector(".mando-tv__video");
+  const mount = tv.querySelector('[data-tv="player"]');
   const s = normalizar(state);
   const meta = channelMeta(s.channel);
+  const ctx = hosts.get(el);
+  ctx.pending = s;
 
   const poner = (clave, texto) => {
     const nodo = tv.querySelector(`[data-tv="${clave}"]`);
@@ -208,27 +330,78 @@ export function renderTV(el, state) {
 
   tv.dataset.encendida = s.power ? "si" : "no";
   tv.dataset.silencio = s.muted ? "si" : "no";
+  tv.dataset.audio = ctx.unlocked ? "on" : "off";
+  tv.dataset.live = meta.live ? "si" : "no";
   tv.dataset.canal = String(meta.index + 1);
 
   poner("volumen", s.volume);
   poner("volumen-guardado", s.volume);
   poner("canal-badge", `CH ${s.channel}`);
-  poner("canal-nombre", `${meta.name} · ${meta.tagline}`);
+  poner(
+    "canal-nombre",
+    meta.audio
+      ? `${meta.name} · ${meta.tagline}`
+      : `${meta.name} · ${meta.tagline}`,
+  );
   poner("lector", describir(s, meta));
 
   const nivel = tv.querySelector('[data-tv="nivel"]');
   if (nivel) nivel.style.width = `${s.volume}%`;
 
+  const activar = tv.querySelector('[data-tv="activar-audio"]');
+  if (activar) {
+    activar.hidden = Boolean(ctx.unlocked);
+    if (!activar.dataset.bound) {
+      activar.dataset.bound = "1";
+      activar.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        unlockTVAudio(el);
+        renderTV(el, ctx.pending || s);
+      });
+    }
+  }
+
   const errorNode = tv.querySelector('[data-tv="error"]');
-  syncVideo(video, s, meta, errorNode);
+  ensurePlayer(el, mount, meta, errorNode);
+  applyPlayerState(ctx, s);
 }
 
 /** Llamar tras el primer gesto del usuario para habilitar audio. */
 export function unlockTVAudio(el) {
-  const video = el?.querySelector?.(".mando-tv__video");
-  if (!video) return;
-  video.dataset.unlocked = "1";
-  if (video.paused) {
-    video.play().catch(() => {});
+  const ctx = hosts.get(el);
+  if (!ctx) return;
+  ctx.unlocked = true;
+  const slap = () => {
+    if (ctx.pending) applyPlayerState(ctx, ctx.pending);
+    const tv = el.querySelector?.(":scope > .mando-tv");
+    if (tv) tv.dataset.audio = "on";
+    const btn = el.querySelector?.('[data-tv="activar-audio"]');
+    if (btn) btn.hidden = true;
+  };
+  slap();
+  // YouTube a veces tarda en aceptar unMute tras el gesto.
+  clearTimeout(ctx.unlockTimer);
+  let n = 0;
+  const tick = () => {
+    slap();
+    n += 1;
+    if (n < 6) ctx.unlockTimer = setTimeout(tick, 250);
+  };
+  ctx.unlockTimer = setTimeout(tick, 200);
+}
+
+/** Mientras Mandy escucha, callá el canal (sin tocar el estado de la sala). */
+export function setTVMicDucking(el, on) {
+  const ctx = hosts.get(el);
+  if (!ctx) return;
+  ctx.micDucking = Boolean(on);
+  if (ctx.pending) applyPlayerState(ctx, ctx.pending);
+  else if (ctx.player) {
+    try {
+      if (on) ctx.player.mute();
+      else if (ctx.unlocked) ctx.player.unMute();
+    } catch {
+      // ignore
+    }
   }
 }
