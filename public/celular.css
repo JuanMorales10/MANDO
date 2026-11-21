@@ -59,7 +59,29 @@
 }
 .cel__entrar button { background: var(--lima, #C9F76A); color: #101522; }
 
-.cel__estado { margin: 0 0 12px; font-size: 1.2rem; font-weight: 700; min-height: 1.5em; }
+.cel__estado {
+  margin: 0 0 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 2px solid rgba(245, 244, 238, 0.25);
+  font-size: 1.35rem;
+  font-weight: 800;
+  min-height: 1.5em;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.cel[data-tv="silencio"] .cel__estado { background: var(--lima, #C9F76A); color: #101522; border-color: transparent; }
+.cel[data-tv="apagada"] .cel__estado { opacity: 0.6; border-style: dashed; }
+
+/* En Usar, las casillas vacías no se ven: solo quedan los botones que hacen algo. */
+.cel .mando-remote.is-use .mando-remote__cell { visibility: hidden; }
+
+/* Silencio y Encendido muestran si están activos. */
+.cel .mando-remote__btn[data-activo="true"],
+.cel__extra button[data-activo="true"] {
+  background: var(--lima, #C9F76A);
+  color: #101522;
+}
+.cel__extra button:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .cel__extra {
   display: grid;

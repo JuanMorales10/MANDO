@@ -39,8 +39,24 @@ function marcarConexion(estado, texto) {
   conexion.textContent = texto;
 }
 
+// El mando no conoce la TV; esta página sí, así que marca qué está activo.
+function marcarBotones(state) {
+  const silencio = document.querySelector('#remote [data-action="MUTE"]');
+  if (silencio) {
+    silencio.dataset.activo = String(state.muted);
+    silencio.setAttribute("aria-pressed", String(state.muted));
+  }
+  const encendido = document.querySelector('.cel__extra [data-accion="POWER"]');
+  if (encendido) {
+    encendido.dataset.activo = String(!state.power);
+    encendido.setAttribute("aria-pressed", String(!state.power));
+  }
+}
+
 function mostrarEstado({ state, conectores = [] }) {
   if (!state) return;
+  marcarBotones(state);
+  document.body.dataset.tv = !state.power ? "apagada" : state.muted ? "silencio" : "sonando";
   const partes = [
     state.power ? (state.muted ? "🔇 Silencio" : `🔊 Volumen ${state.volume}`) : "⏻ Apagada",
     `Canal ${state.channel}`,
@@ -106,9 +122,18 @@ async function entrar(valor) {
     $("mando").hidden = false;
     if (!montado) {
       mountRemote($("remote"), enviar);
-      for (const boton of document.querySelectorAll(".cel__extra [data-accion]")) {
+      const extras = document.querySelectorAll(".cel__extra [data-accion]");
+      for (const boton of extras) {
         boton.addEventListener("click", () => enviar(boton.dataset.accion));
       }
+      // En Editar ningún botón manda acciones, tampoco los de abajo.
+      const remote = $("remote");
+      const sincronizarModo = () => {
+        const editando = remote.classList.contains("is-edit");
+        for (const boton of extras) boton.disabled = editando;
+      };
+      new MutationObserver(sincronizarModo).observe(remote, { attributes: true, attributeFilter: ["class"] });
+      sincronizarModo();
       montado = true;
     }
     mostrarEstado(datos);
