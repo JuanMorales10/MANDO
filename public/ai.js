@@ -99,6 +99,36 @@ function qrSrc(data) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=6&data=${encodeURIComponent(data)}`;
 }
 
+async function refrescarPuntero() {
+  const bloque = $("bloque-puntero");
+  const link = $("link-puntero");
+  const texto = $("puntero-texto");
+  if (!bloque || !link) return;
+
+  const codigoQ = codigo ? `?c=${encodeURIComponent(codigo)}` : "";
+  link.href = `/puntero/${codigoQ}`;
+
+  // Local (npm run sala:puntero / MANDO.command): el server expone /puntero/info.
+  try {
+    const res = await fetch("/puntero/info", { cache: "no-store" });
+    if (res.ok) {
+      const info = await res.json();
+      if (info?.puntero) {
+        bloque.dataset.listo = "1";
+        texto.textContent = "Listo en esta compu · abrí desde el celu o acá";
+        if (typeof info.url === "string" && info.url) link.href = info.url;
+        else link.href = `/puntero/index.html${codigoQ}`;
+        return;
+      }
+    }
+  } catch {
+    // en Vercel no hay server de puntero
+  }
+
+  bloque.dataset.listo = "0";
+  texto.textContent = "Mové el celu y movés el cursor de la compu";
+}
+
 function mostrarSala(info) {
   codigo = info.codigo;
   const joinUrl =
@@ -114,6 +144,7 @@ function mostrarSala(info) {
   ultimaVista = info.ultima?.hora || 0;
   aplicar(info);
   montarMandy();
+  refrescarPuntero();
 }
 
 // Si abrís / desde el teléfono, saltá directo al mando + Mandy.
@@ -143,6 +174,11 @@ setInterval(async () => {
     // ignore
   }
 }, 700);
+
+// Si arrancás MANDO.command después, el bloque pasa a «listo».
+setInterval(() => {
+  refrescarPuntero().catch(() => {});
+}, 4000);
 
 window.addEventListener(
   "pointerdown",

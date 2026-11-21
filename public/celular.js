@@ -545,6 +545,27 @@ $("mando").addEventListener("click", (evento) => {
 
 // ---------- Puntero: siempre visible. Si la compu todavía no lo ofrece, avisa cómo activarlo. ----------
 
+async function detectarPunteroLocal() {
+  const boton = $("abrir-puntero");
+  if (!boton || boton.dataset.listo === "si") return;
+  try {
+    const res = await fetch("/puntero/estado", { cache: "no-store" });
+    if (!res.ok) return;
+    const estado = await res.json();
+    if (!estado?.puntero) return;
+    const c = codigo ? `?c=${encodeURIComponent(codigo)}` : "";
+    boton.href = `/puntero/index.html${c}`;
+    boton.dataset.listo = "si";
+  } catch {
+    // Vercel / sin sala:puntero
+  }
+}
+
+setInterval(() => {
+  detectarPunteroLocal().catch(() => {});
+}, 4000);
+detectarPunteroLocal().catch(() => {});
+
 $("abrir-puntero").addEventListener("click", (e) => {
   if ($("abrir-puntero").dataset.listo === "si") return; // abre el puntero de la compu
   e.preventDefault();
